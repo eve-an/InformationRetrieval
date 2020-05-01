@@ -17,6 +17,8 @@ public class ArgDB {
 		}
 	}
 	
+	public void test() {}
+	
 	public void dbInsert(String string) {
 		//TODO
 	}
