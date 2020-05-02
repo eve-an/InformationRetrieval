@@ -2,12 +2,15 @@ package argssearch.entity;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class Premise {
 
-    private static final Logger logger = LogManager.getLogger(Premise.class);
     private String text;
     private String stance;
+    private List<Annotation> annotations;
 
     public String getText() {
         return text;
@@ -18,18 +21,19 @@ public class Premise {
     }
 
     public Stance getStance() {
-        if (stance.equalsIgnoreCase("pro")) {
-            return Stance.PRO;
-        } else if (stance.equalsIgnoreCase("con")) {
-            return Stance.CON;
-        } else {
-            logger.warn("Premise has no matching Stance.");
-            return null;
-        }
+        return stance.equalsIgnoreCase("PRO") ? Stance.PRO : Stance.CON;
     }
 
     public void setStance(String stance) {
         this.stance = stance;
+    }
+
+    public List<Annotation> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(List<Annotation> annotations) {
+        this.annotations = annotations;
     }
 
     @Override
