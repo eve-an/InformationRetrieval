@@ -23,5 +23,18 @@
 hs_err_pid*
 
 # Intellij
-.idea
+.idea/
 *.iml
+
+# Eclipse
+.settings/
+.classpath
+.project
+
+# Maven
+target/
+
+# Argument-Jsons
+*.json
+
+

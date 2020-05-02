@@ -1,14 +1,22 @@
 package argssearch.entity;
 
+import java.util.List;
+
 public class Context {
 
     private String sourceId;
-    private String previousArgumentInSourceId;
     private String acquisitionTime;
     private String discussionTitle;
     private String sourceTitle;
     private String sourceUrl;
-    private String nextArgumentInSourceId;
+    private String mode;
+    private String sourceDomain;
+    private String sourceText;
+    private String sourceTextConclusionStart;
+    private String sourceTextConclusionEnd;
+    private String sourceTextPremiseStart;
+    private String sourceTextPremiseEnd;
+    private List<Aspect> aspects;
 
     public String getSourceId() {
         return sourceId;
@@ -16,14 +24,6 @@ public class Context {
 
     public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
-    }
-
-    public String getPreviousArgumentInSourceId() {
-        return previousArgumentInSourceId;
-    }
-
-    public void setPreviousArgumentInSourceId(String previousArgumentInSourceId) {
-        this.previousArgumentInSourceId = previousArgumentInSourceId;
     }
 
     public String getAcquisitionTime() {
@@ -58,24 +58,67 @@ public class Context {
         this.sourceUrl = sourceUrl;
     }
 
-    public String getNextArgumentInSourceId() {
-        return nextArgumentInSourceId;
+    public String getMode() {
+        return mode;
     }
 
-    public void setNextArgumentInSourceId(String nextArgumentInSourceId) {
-        this.nextArgumentInSourceId = nextArgumentInSourceId;
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
-    @Override
-    public String toString() {
-        return "Context{" +
-                "sourceId='" + sourceId + '\'' +
-                ", previousArgumentInSourceId='" + previousArgumentInSourceId + '\'' +
-                ", acquisitionTime='" + acquisitionTime + '\'' +
-                ", discussionTitle='" + discussionTitle + '\'' +
-                ", sourceTitle='" + sourceTitle + '\'' +
-                ", sourceUrl='" + sourceUrl + '\'' +
-                ", nextArgumentInSourceId='" + nextArgumentInSourceId + '\'' +
-                '}';
+    public String getSourceDomain() {
+        return sourceDomain;
+    }
+
+    public void setSourceDomain(String sourceDomain) {
+        this.sourceDomain = sourceDomain;
+    }
+
+    public String getSourceText() {
+        return sourceText;
+    }
+
+    public void setSourceText(String sourceText) {
+        this.sourceText = sourceText;
+    }
+
+    public String getSourceTextConclusionStart() {
+        return sourceTextConclusionStart;
+    }
+
+    public void setSourceTextConclusionStart(String sourceTextConclusionStart) {
+        this.sourceTextConclusionStart = sourceTextConclusionStart;
+    }
+
+    public String getSourceTextConclusionEnd() {
+        return sourceTextConclusionEnd;
+    }
+
+    public void setSourceTextConclusionEnd(String sourceTextConclusionEnd) {
+        this.sourceTextConclusionEnd = sourceTextConclusionEnd;
+    }
+
+    public String getSourceTextPremiseStart() {
+        return sourceTextPremiseStart;
+    }
+
+    public void setSourceTextPremiseStart(String sourceTextPremiseStart) {
+        this.sourceTextPremiseStart = sourceTextPremiseStart;
+    }
+
+    public String getSourceTextPremiseEnd() {
+        return sourceTextPremiseEnd;
+    }
+
+    public void setSourceTextPremiseEnd(String sourceTextPremiseEnd) {
+        this.sourceTextPremiseEnd = sourceTextPremiseEnd;
+    }
+
+    public List<Aspect> getAspects() {
+        return aspects;
+    }
+
+    public void setAspects(List<Aspect> aspects) {
+        this.aspects = aspects;
     }
 }
