@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS arg_index;
+DROP TABLE IF EXISTS argument_index;
 DROP TABLE IF EXISTS premise_index;
 DROP TABLE IF EXISTS discussion_index;
 DROP TABLE IF EXISTS token;
