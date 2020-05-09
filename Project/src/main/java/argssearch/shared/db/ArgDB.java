@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class ArgDB {
 
@@ -22,8 +23,8 @@ public class ArgDB {
 	private Connection conn;
 	private ArgDB() {
 		try {
-			this.conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/argdb", "irargdb",
-					"");
+			this.conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/argdb", "postgres",
+					"robin");
 		}
 		catch (SQLException e) {
 			System.out.println(e.getMessage());
@@ -45,6 +46,16 @@ public class ArgDB {
 		return null;
 	}
 
+	public PreparedStatement prepareStatementWithReturnOfId(String query, String primaryKeyAttributeName) {
+		try {
+			return this.conn.prepareStatement(query, new String[]{primaryKeyAttributeName});
+		} catch (SQLException sqlE) {
+			// TODO log this
+			sqlE.printStackTrace();
+		}
+		return null;
+	}
+
 	public ResultSet query(String queryText) {
 		try {
 			return this.conn.createStatement().executeQuery(queryText);
@@ -52,6 +63,10 @@ public class ArgDB {
 			// TODO log
 		}
 		return null;
+	}
+
+	public static boolean isException(SQLException sqle) {
+		return false;
 	}
 }
 

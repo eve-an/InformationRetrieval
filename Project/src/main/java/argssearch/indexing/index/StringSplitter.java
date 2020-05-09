@@ -7,6 +7,12 @@ import java.util.Map;
 
 public class StringSplitter {
 
+    private TokenCache cache;
+
+    StringSplitter() {
+        this.cache = TokenCacheFactory.getInstance().get(10000);
+    }
+
     /**
      * to get the tokens from the text together with the tokenid and the positions within the text
      * @param text the text as Array, every word is an entry
@@ -14,14 +20,14 @@ public class StringSplitter {
      * in the given String
      */
 
-    public Map<String, List<Integer>> getSplittedString(String[] text){
+    Map<String, List<Integer>> getSplittedString(String[] text){
         Map<String, List<Integer>> result = new HashMap<String, List<Integer>>();
         for(int i = 0; i < text.length; i++){
             if(result.containsKey(text[i])){
                 result.get(text[i]).add(i);
             }else{
                 ArrayList<Integer> l = new ArrayList<Integer>();
-                l.add(1); // should be replaced with Cache.get(text[i]);
+                l.add(this.cache.get(text[i]));
                 l.add(i);
                 result.put(text[i], l);
             }
