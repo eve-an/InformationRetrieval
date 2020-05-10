@@ -56,7 +56,7 @@ class JsonConsumer implements Runnable {
             logger.info("Insertion Time: {}", new SimpleDateFormat("mm:ss").format(new Date(System.currentTimeMillis() - now)));
 
             logger.info("Copying temp data to original database.");
-            ArgDB.getInstance().executeSqlFile("/insertion/temp/temp_constraints.sql");
+            ArgDB.getInstance().executeSqlFile("/database/insertion/temp/temp_constraints.sql");
 
 
         } catch (InterruptedException e) {

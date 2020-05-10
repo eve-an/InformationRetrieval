@@ -57,23 +57,16 @@ public class ArgDB {
                 "token_bootstrap.sql",
                 "index_bootstrap.sql",
                 "trigger_bootstrap.sql"
-        ).forEachOrdered(this::executeSqlFile);
+        ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 
         logger.info("Created a new Schema.");
     }
 
-    public void executeSqlFile(String name) {
-        final String path = getClass().getResource("/database/" + name).getPath();
-        final String postgresCmd = String.format("psql -U %s -d %s -f %s", USERNAME, DB_NAME, path);
+    public void executeSqlFile(String relativePath) {
+        final String path = getClass().getResource(relativePath).getPath();
+        final ProcessBuilder pb = new ProcessBuilder("psql", "-U", USERNAME, "-d", DB_NAME, "-f", path);
 
-        final ProcessBuilder pb = new ProcessBuilder();
-        final String os = System.getProperty("os.name");
         try {
-            if (os.equalsIgnoreCase("linux")) {
-                pb.command("bash", "-c", postgresCmd);
-            } else if (os.equalsIgnoreCase("windows")) {
-                pb.command("cmd.exe", "/c", postgresCmd);   // TODO: Test
-            }
             Process p = pb.start();
 
             BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));

@@ -11,7 +11,7 @@ public class Acquisition {
 
     public static void exec(String path, BlockingDeque<JsonArgument> queue) {
         logger.info("Start reading Json and inserting data into database.");
-        ArgDB.getInstance().executeSqlFile("/insertion/temp/create_temp_tables.sql");
+        ArgDB.getInstance().executeSqlFile("/database/insertion/temp/create_temp_tables.sql");
 
 
         /* TODO:
