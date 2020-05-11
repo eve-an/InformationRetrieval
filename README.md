@@ -30,3 +30,7 @@ Check connection to database
 
 To login from shell use following command:  
 `$ psql -U irargdb -d argdb`
+
+## ER-Model
+![Where is my Model?](ER.png "ER-Model")
+
