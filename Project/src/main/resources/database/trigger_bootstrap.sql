@@ -11,15 +11,15 @@ CREATE OR REPLACE FUNCTION arg_index_decrement_trig_func() RETURNS TRIGGER AS $a
 END;
 $arg_trig_dec_func$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS arg_index_inc_trig ON arg_index;
+DROP TRIGGER IF EXISTS arg_index_inc_trig ON argument_index;
 CREATE TRIGGER arg_index_inc_trig
 AFTER INSERT OR UPDATE 
-ON arg_index FOR EACH ROW EXECUTE PROCEDURE arg_index_increment_trig_func();
+ON argument_index FOR EACH ROW EXECUTE PROCEDURE arg_index_increment_trig_func();
 
-DROP TRIGGER IF EXISTS arg_index_dec_trig ON arg_index;
+DROP TRIGGER IF EXISTS arg_index_dec_trig ON argument_index;
 CREATE TRIGGER arg_index_dec_trig
 BEFORE UPDATE OR DELETE 
-ON arg_index FOR EACH ROW EXECUTE PROCEDURE arg_index_decrement_trig_func();
+ON argument_index FOR EACH ROW EXECUTE PROCEDURE arg_index_decrement_trig_func();
 
 
 --------------------------------------------

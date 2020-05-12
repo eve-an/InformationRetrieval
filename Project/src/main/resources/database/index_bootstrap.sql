@@ -1,6 +1,6 @@
 
 -- normal argument search
-CREATE TABLE IF NOT EXISTS arg_index (
+CREATE TABLE IF NOT EXISTS argument_index (
   tID INT REFERENCES token,
   argID INT REFERENCES argument,
   weight SMALLINT NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS arg_index (
   PRIMARY KEY(tID, argID)
 );
 
-CREATE INDEX IF NOT EXISTS arg_index_idx ON arg_index (tID) INCLUDE (argID);
+CREATE INDEX IF NOT EXISTS arg_index_idx ON argument_index (tID) INCLUDE (argID);
 
 -- titles have a higher priority than arguments so when 
 -- a match occures in the premise or discussion we have to 
