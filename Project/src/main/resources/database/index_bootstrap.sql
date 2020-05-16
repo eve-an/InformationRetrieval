@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS arg_index_idx ON argument_index (tID) INCLUDE (argID)
 CREATE TABLE IF NOT EXISTS premise_index (
   tID INT REFERENCES token,
   pID INT REFERENCES premise,
-  weight SMALLINT NOT NULL,
+  weight SMALLINT,
   occurences INT,
   offsets SMALLINT ARRAY NOT NULL,
   PRIMARY KEY(tID, pID)

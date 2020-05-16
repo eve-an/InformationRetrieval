@@ -44,7 +44,6 @@ class TokenCache {
   }
 
   int get(final String identifier) {
-    System.out.print("Finding " + identifier + " ");
     // check if cached
     int lookup = this.store.getOrDefault(identifier, -1);
     // if not cached, look in db
@@ -59,7 +58,6 @@ class TokenCache {
       // whatever happened now we want it in the cache
       this.store.put(identifier, lookup);
     }
-    System.out.println("");
     return lookup;
   }
 
