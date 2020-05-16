@@ -6,6 +6,9 @@ import argssearch.shared.db.ArgDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class Main {
@@ -17,9 +20,10 @@ public class Main {
         ArgDB.getInstance().dropAll();
         ArgDB.getInstance().createSchema();
 
-        Acquisition.exec("/home/ivan/Downloads/parliamentary.json", new LinkedBlockingDeque<>(16));
-        Acquisition.exec("/home/ivan/Downloads/idebate.json", new LinkedBlockingDeque<>(16));
-        Acquisition.exec("/home/ivan/Downloads/debateorg.json", new LinkedBlockingDeque<>(16));
+        ExecutorService es = Executors.newCachedThreadPool();
+
+        Acquisition.exec("/home/ivan/Downloads/parliamentary.json", new LinkedBlockingDeque<>(16), es);
+        //Acquisition.exec("/home/ivan/Downloads/debateorg.json", new LinkedBlockingDeque<>(16), es);
     }
 
 

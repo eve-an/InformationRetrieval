@@ -16,6 +16,8 @@ class JsonDbUtil {
     private PreparedStatement insertPremise;
     private PreparedStatement insertArgument;
 
+    private int batchCounter = 0;
+
     public JsonDbUtil() {
         initStatements();
     }
@@ -44,18 +46,24 @@ class JsonDbUtil {
 
     public void save(Discussion discussion) {
         try {
-            insertDiscussion.setString(1, discussion.getCrawlid());
+            insertDiscussion.setString(1, discussion.getCrawlId());
             insertDiscussion.setString(2, discussion.getTitle());
             insertDiscussion.setString(3, discussion.getUrl());
             insertDiscussion.addBatch();
+            batchCounter++;
         } catch (SQLException throwables) {
             throw new RuntimeException(throwables.getMessage());
+        }
+
+        // From time to time we want our data to be saved in the database
+        if (batchCounter == 1000) {
+            execBatch();
         }
     }
 
     public void save(Premise premise, Argument argument) {
         try {
-            insertPremise.setString(1, premise.getCrawlid());
+            insertPremise.setString(1, premise.getCrawlId());
             insertPremise.setString(2, premise.getTitle());
             insertPremise.addBatch();
         } catch (SQLException throwables) {
@@ -66,9 +74,9 @@ class JsonDbUtil {
 
     public void save(Argument argument) {
         try {
-            insertArgument.setString(1, argument.getCrawlid());
+            insertArgument.setString(1, argument.getCrawlId());
             insertArgument.setString(2, argument.getContent());
-            insertArgument.setBoolean(3, argument.getIspro());
+            insertArgument.setBoolean(3, argument.isPro());
             insertArgument.addBatch();
         } catch (SQLException throwables) {
             throw new RuntimeException(throwables.getMessage());

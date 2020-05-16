@@ -36,9 +36,9 @@ public class ArgDB {
      * Drop everything owned by the given Username.
      */
     public void dropAll() {
-        try (PreparedStatement ps = prepareStatement(String.format("DROP owned by %s", USERNAME))) {
-            ps.execute();
-            conn.createStatement().execute("CREATE SCHEMA public");
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("DROP SCHEMA IF EXISTS public CASCADE");
+            stmt.execute("CREATE SCHEMA IF NOT EXISTS public");
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
@@ -78,10 +78,7 @@ public class ArgDB {
                 logger.error(err);
             }
 
-            if (p.waitFor() != 0) {
-                throw new IOException();
-            }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             logger.error("Error while executing {}", path, e);
         }
     }
