@@ -8,11 +8,6 @@ import java.sql.SQLException;
 public class Indexer {
 
   public static void index() {
-    // one for
-    new Indexer();
-  }
-
-  private Indexer() {
     indexFor("argument", "argid", "content");
     indexFor("premise", "pid", "title");
     indexFor("discussion", "did", "title");
