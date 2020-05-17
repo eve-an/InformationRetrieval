@@ -1,18 +1,14 @@
-package argssearch.shared.lemmatization;
+package argssearch.shared.nlp;
 
-import com.google.gson.JsonParser;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.CoreDocument;
+import edu.stanford.nlp.pipeline.CoreEntityMention;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
+import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -27,7 +23,9 @@ public class CoreNlpService {
 
     public CoreNlpService() {
         Properties properties = new Properties();
-        properties.setProperty("annotators", "tokenize,ssplit,pos,lemma");
+        // In case you dont need named entity recognition remove the ner property
+        // It is the most expensive operation
+        properties.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner");
         pipeline = new StanfordCoreNLP(properties);
         stopWords = new HashSet<>();
         initStopWords();
@@ -37,15 +35,16 @@ public class CoreNlpService {
      * Reads stop words from a list and put them into a HashSet.
      */
     private void initStopWords() {
-        String path = getClass().getResource("/stopwords.json").getPath();
-        try (Reader reader = new FileReader(path)) {
-            JsonParser.parseReader(reader)
-                    .getAsJsonObject()
-                    .getAsJsonArray("words")
-                    .iterator()
-                    .forEachRemaining(jsonElement -> stopWords.add(jsonElement.getAsString()));
+        String path = getClass().getResource("/stopwords.txt").getPath();
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            String word;
+            while ((word = br.readLine()) != null) {
+                if (!word.startsWith("//")) {    // Comments
+                    stopWords.add(word);
+                }
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e.getLocalizedMessage());
+            e.printStackTrace();
         }
     }
 
@@ -67,6 +66,30 @@ public class CoreNlpService {
     }
 
     /**
+     * Gets the named entity relations.
+     *
+     * @param document document as String
+     * @return A Map with tokens as keys and their ner as values.
+     */
+    public Map<String, String> namedEntities(final String document) {
+        CoreDocument doc = new CoreDocument(document);
+        pipeline.annotate(doc);
+
+        Map<String, String> namedEntities = new HashMap<>();
+        for (CoreEntityMention mention : doc.entityMentions()) {
+            String entity = mention.text();
+            String type = mention.entityType();
+
+            if (checkAgainstStopWords(type)) {
+                namedEntities.put(entity, type);
+            }
+        }
+
+
+        return namedEntities;
+    }
+
+    /**
      * Checks if a token is a stop word and matches the regex.
      * The regex accepts only words with alphabetical characters and a minimum length of 2.
      *
@@ -75,22 +98,5 @@ public class CoreNlpService {
      */
     private boolean checkAgainstStopWords(final String token) {
         return !stopWords.contains(token) && pattern.matcher(token).matches();
-    }
-
-    /**
-     * Test our lemmatize function with an example.
-     */
-    private void test() {
-        try {
-            String file = Files.readString(Paths.get(getClass().getResource("/test/document.txt").getPath()));
-            System.out.println(lemmatize(file));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        CoreNlpService service = new CoreNlpService();
-        service.test();
     }
 }
