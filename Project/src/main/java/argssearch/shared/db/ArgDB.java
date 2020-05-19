@@ -13,13 +13,13 @@ public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
     private final Connection conn;
-    private final String USERNAME = "irargdb";
+    private final String USERNAME = "postgres";
     private final String DB_NAME = "argdb";
     private final String DB_URL = "jdbc:postgresql://localhost:5432/" + DB_NAME;
 
     private ArgDB() {
         try {
-            this.conn = DriverManager.getConnection(DB_URL, USERNAME, "");
+            this.conn = DriverManager.getConnection(DB_URL, USERNAME, "robin");
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -93,6 +93,20 @@ public class ArgDB {
         return null;
     }
 
+    public PreparedStatement prepareStatementWithReturnOfId(String query, String primaryKeyAttributeName) {
+		try {
+			return this.conn.prepareStatement(query, new String[]{primaryKeyAttributeName});
+		} catch (SQLException sqlE) {
+			// TODO log this
+			sqlE.printStackTrace();
+		}
+		return null;
+	}
+
+	public static boolean isException(SQLException sqle) {
+		return false;
+	}
+
     public ResultSet query(String queryText) {
         try {
             return this.conn.createStatement().executeQuery(queryText);
@@ -115,6 +129,17 @@ public class ArgDB {
         return -1;
     }
 
+    public Array createArrayOf(String type, Object[] array) {
+        try {
+            return this.conn.createArrayOf(type, array);
+        } catch (SQLException sqlE) {
+            if (isException(sqlE)) {
+                sqlE.printStackTrace();
+            }
+        }
+        return null;
+    }
+
     public long getRowCount(String table) {
         try (ResultSet rs = query(String.format("SELECT COUNT(*) FROM %s", table))) {
             if (rs.next()) {
@@ -128,9 +153,7 @@ public class ArgDB {
     }
 
     private static class InstanceHolder {
-
         private static ArgDB argDBInstance;
     }
-
 }
 
