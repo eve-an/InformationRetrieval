@@ -13,13 +13,13 @@ public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
     private final Connection conn;
-    private final String USERNAME = "postgres";
+    private final String USERNAME = "irargdb";
     private final String DB_NAME = "argdb";
     private final String DB_URL = "jdbc:postgresql://localhost:5432/" + DB_NAME;
 
     private ArgDB() {
         try {
-            this.conn = DriverManager.getConnection(DB_URL, USERNAME, "robin");
+            this.conn = DriverManager.getConnection(DB_URL, USERNAME, "");
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage());
         }
