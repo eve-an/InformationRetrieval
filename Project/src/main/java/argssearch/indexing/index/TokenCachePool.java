@@ -1,23 +1,21 @@
 package argssearch.indexing.index;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TokenCacheFactory {
+public class TokenCachePool {
 
   private static class TokenCacheFactoryInstanceHolder {
-    private static TokenCacheFactory instance;
+    private static TokenCachePool instance;
   }
-  static TokenCacheFactory getInstance() {
+  static TokenCachePool getInstance() {
     if (TokenCacheFactoryInstanceHolder.instance == null) {
-      TokenCacheFactoryInstanceHolder.instance = new TokenCacheFactory();
+      TokenCacheFactoryInstanceHolder.instance = new TokenCachePool();
     }
     return TokenCacheFactoryInstanceHolder.instance;
   }
 
   private ConcurrentHashMap<Integer, TokenCache> caches;
-  private TokenCacheFactory() {
+  private TokenCachePool() {
     this.caches = new ConcurrentHashMap<>();
   }
 

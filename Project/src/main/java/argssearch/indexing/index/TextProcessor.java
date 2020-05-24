@@ -18,7 +18,7 @@ public class TextProcessor {
     private int counter = 0;
 
     TextProcessor(AbstractTextTable entry) {
-        this.cache = TokenCacheFactory.getInstance().get(10000);
+        this.cache = TokenCachePool.getInstance().get(10000);
 
         // TODO integrate this with AbstractIndexTable
         ps = ArgDB.getInstance().prepareStatement(String.format(
