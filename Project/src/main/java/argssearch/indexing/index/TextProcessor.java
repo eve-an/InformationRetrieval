@@ -1,7 +1,12 @@
 package argssearch.indexing.index;
 
+import argssearch.shared.cache.TokenCache;
+import argssearch.shared.cache.TokenCachePool;
+import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.AbstractTextTable;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.nlp.CoreNlpService;
+import edu.stanford.nlp.simple.Token;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -14,22 +19,25 @@ public class TextProcessor {
     private static final int MAX_BATCH_SIZE = 99;
 
     private TokenCache cache;
+    private CoreNlpService nlpService;
     private PreparedStatement ps;
     private int counter = 0;
 
-    TextProcessor(AbstractTextTable entry) {
-        this.cache = TokenCachePool.getInstance().get(10000);
+    TextProcessor(AbstractIndexTable table, TokenCache cache, CoreNlpService nlpService) {
+        this.cache = cache;
+        this.nlpService = nlpService;
 
         // TODO integrate this with AbstractIndexTable
         ps = ArgDB.getInstance().prepareStatement(String.format(
-                "INSERT INTO %s_index (tID, %s, occurrences, offsets) VALUES (?,?,?,?)",
-                entry.getTableName(),
-                entry.getPrimaryKeyAttributeName()
+                "INSERT INTO %s (tID, %s, occurrences, offsets) VALUES (?,?,?,?)",
+                table.getTableName(),
+                table.getRefId()
         ));
+
     }
 
     void process(final int id, final String text){
-        Map<String, List<Integer>> splittedString = getSplittedString(text.split(" "));
+        Map<String, List<Integer>> splittedString = getSplittedString(nlpService.lemmatize(text));
         for(Map.Entry<String, List<Integer>> token : splittedString.entrySet()){
 
             Integer tId = token.getValue().remove(0);
@@ -73,16 +81,16 @@ public class TextProcessor {
      * @return String ist the token, the first Integer is the tokenId followed by the indices where the token occurs
      * in the given String
      */
-    private Map<String, List<Integer>> getSplittedString(String[] text){
+    private Map<String, List<Integer>> getSplittedString(List<String> text){
         Map<String, List<Integer>> result = new HashMap<String, List<Integer>>();
-        for(int i = 0; i < text.length; i++){
-            if(result.containsKey(text[i])){
-                result.get(text[i]).add(i);
+        for(int i = 0; i < text.size(); i++){
+            if(result.containsKey(text.get(i))){
+                result.get(text.get(i)).add(i);
             }else{
                 ArrayList<Integer> l = new ArrayList<Integer>();
-                l.add(this.cache.get(text[i]));
+                l.add(this.cache.get(text.get(i)));
                 l.add(i);
-                result.put(text[i], l);
+                result.put(text.get(i), l);
             }
         }
         return result;

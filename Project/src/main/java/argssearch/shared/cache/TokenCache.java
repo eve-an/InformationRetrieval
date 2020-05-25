@@ -1,4 +1,4 @@
-package argssearch.indexing.index;
+package argssearch.shared.cache;
 
 import argssearch.shared.db.ArgDB;
 import java.sql.PreparedStatement;
@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-class TokenCache {
+public class TokenCache {
 
   private static final String TOKEN_PRIMARY_KEY = "tid";
   private static final String TOKEN_TABLE_NAME = "token";
@@ -43,7 +43,7 @@ class TokenCache {
     this.store = new ConcurrentCacheMap<>(cacheSize);
   }
 
-  int get(final String identifier) {
+  public int get(final String identifier) {
     // check if cached
     int lookup = this.store.getOrDefault(identifier, -1);
     // if not cached, look in db
@@ -96,10 +96,6 @@ class TokenCache {
 
     public ConcurrentCacheMap(final int cacheSize) {
       this.map = new CacheMap<>(cacheSize);
-    }
-
-    public synchronized V get(final K key) {
-      return this.map.get(key);
     }
 
     public synchronized V getOrDefault(final K key, final V defaultValue) {

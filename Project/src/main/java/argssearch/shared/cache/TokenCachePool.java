@@ -1,4 +1,4 @@
-package argssearch.indexing.index;
+package argssearch.shared.cache;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -7,7 +7,11 @@ public class TokenCachePool {
   private static class TokenCacheFactoryInstanceHolder {
     private static TokenCachePool instance;
   }
-  static TokenCachePool getInstance() {
+
+
+  private static final int DEFAULT_TOKEN_CACHE_SIZE = 10000;
+
+  public static TokenCachePool getInstance() {
     if (TokenCacheFactoryInstanceHolder.instance == null) {
       TokenCacheFactoryInstanceHolder.instance = new TokenCachePool();
     }
@@ -26,5 +30,9 @@ public class TokenCachePool {
       this.caches.put(tokenCacheSize, cache);
     }
     return cache;
+  }
+
+  public TokenCache getDefault() {
+    return this.get(DEFAULT_TOKEN_CACHE_SIZE);
   }
 }
