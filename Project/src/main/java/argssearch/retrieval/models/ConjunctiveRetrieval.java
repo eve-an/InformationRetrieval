@@ -8,9 +8,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ConjunctiveRetrieval {
 
@@ -20,12 +19,12 @@ public class ConjunctiveRetrieval {
 
   public ConjunctiveRetrieval(CoreNlpService nlpService, TokenCache cache, AbstractIndexTable table) {
     this.query = ArgDB.getInstance().prepareStatement(String.format(
-      "SELECT %s AS refid, sum(%s) AS weight_sum, SUM(%s) AS occurrence_count "+
+      "SELECT %s AS refid, sum(%s) * ? AS weight, SUM(%s) AS occurrence_count "+
       "FROM %s " +
       "WHERE %s >= ? AND %s = ANY(?::int[]) " +
       "GROUP BY refid " +
       "HAVING COUNT(%s) = ? " +
-      "ORDER BY weight_sum DESC, occurrence_count DESC;",
+      "ORDER BY weight DESC, occurrence_count DESC;",
       table.getRefId(),
       table.getWeight(),
       table.getOccurrences(),
@@ -38,18 +37,19 @@ public class ConjunctiveRetrieval {
     this.cache = cache;
   }
 
-  public void execute(final String text, final int tokenMinWeight, final Consumer<Integer> argumentProcessor) {
+  public void execute(final String text, final int tokenMinWeight, final int weightMultiplier, final BiConsumer<Integer, Integer> argumentProcessor) {
     List<String> preprocessedText = nlpService.lemmatize(text);
     String tokenArray = preprocessedText.stream().map(this.cache::get).map(String::valueOf).collect(Collectors.joining(", ", "{", "}"));
 
     try {
-        this.query.setInt(1, tokenMinWeight);
-        this.query.setString(2, tokenArray);
-        this.query.setInt(3, preprocessedText.size());
+        this.query.setInt(1, weightMultiplier);
+        this.query.setInt(2, tokenMinWeight);
+        this.query.setString(3, tokenArray);
+        this.query.setInt(4, preprocessedText.size());
 
         ResultSet resultSet = this.query.executeQuery();
         while (resultSet.next()) {
-          argumentProcessor.accept(resultSet.getInt(1));
+          argumentProcessor.accept(resultSet.getInt(1), resultSet.getInt(2));
         }
         resultSet.close();
     } catch (SQLException sqlE) {
