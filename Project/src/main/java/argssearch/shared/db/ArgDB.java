@@ -35,14 +35,14 @@ public class ArgDB {
     /**
      * Drop everything owned by the given Username.
      */
-    public void dropAll() {
+    public void dropSchema(final String schema) {
         try (Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP SCHEMA IF EXISTS public CASCADE");
-            stmt.execute("CREATE SCHEMA IF NOT EXISTS public");
+            stmt.execute("DROP SCHEMA IF EXISTS " + schema +  " CASCADE");
+            stmt.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
-        logger.info("Dropped everything.");
+        logger.info("Dropped " + schema);
     }
 
     /**

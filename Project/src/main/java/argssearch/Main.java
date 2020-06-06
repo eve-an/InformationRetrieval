@@ -17,13 +17,12 @@ public class Main {
 
     public static void main(String[] args) {
         // Start with a new, clean schema
-        ArgDB.getInstance().dropAll();
+        ArgDB.getInstance().dropSchema("public");
         ArgDB.getInstance().createSchema();
 
         ExecutorService es = Executors.newCachedThreadPool();
 
-        Acquisition.exec("/home/ivan/Downloads/parliamentary.json", new LinkedBlockingDeque<>(16), es);
-        //Acquisition.exec("/home/ivan/Downloads/debateorg.json", new LinkedBlockingDeque<>(16), es);
+        Acquisition.exec("/home/ivan/Documents/IR_JSON", new LinkedBlockingDeque<>(16), es);
     }
 
 
