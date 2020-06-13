@@ -70,6 +70,15 @@ BEGIN
 
     INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA1', 'arguments freedom fighter germany', 4, TRUE) RETURNING argID INTO argument1Id;
     INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA2', 'arguments fighter freedom germany', 4, FALSE) RETURNING argID INTO argument2Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA3', 'fighter for arguments germany', 4, FALSE) RETURNING argID INTO argument3Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA4', 'fighter fighter', 4, FALSE) RETURNING argID INTO argument4Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA5', 'fighter germany fighter', 4, FALSE) RETURNING argID INTO argument5Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA6', 'fighter germany fighter fighter', 4, FALSE) RETURNING argID INTO argument6Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA7', 'fighter germany fighter fighter germany fighter', 4, FALSE) RETURNING argID INTO argument7Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA8', 'fighter germany fighter windows fighter germany fighter', 4, FALSE) RETURNING argID INTO argument8Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA9', 'fighter germany fighter windows fighter germany fighter fighter', 4, FALSE) RETURNING argID INTO argument9Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA10', 'fighter', 4, FALSE) RETURNING argID INTO argument10Id;
+    
     --INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise3Id, 'crawlA3', 'arguments are nothing but interesting', 30, TRUE) RETURNING argID INTO argument3Id;
     --INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise4Id, 'crawlA4', 'arguments are nothing but false', 40, FALSE) RETURNING argID INTO argument4Id;
     --INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise5Id, 'crawlA5', 'arguments are nothing but easy', 50, TRUE) RETURNING argID INTO argument5Id;

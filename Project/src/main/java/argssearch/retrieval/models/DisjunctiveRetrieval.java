@@ -36,7 +36,12 @@ public class DisjunctiveRetrieval {
   }
 
   public void execute(final String text, final int tokenMinWeight, final int weightMultiplier, final BiConsumer<Integer, Integer> argumentProcessor) {
-    String tokenArray = nlpService.lemmatize(text).stream().map(this.cache::get).map(String::valueOf).collect(Collectors.joining(", ", "{", "}"));
+    String tokenArray = nlpService.lemmatize(text)
+        .stream()
+        .distinct()
+        .map(this.cache::get)
+        .map(String::valueOf)
+        .collect(Collectors.joining(", ", "{", "}"));
 
     try {
         this.query.setInt(1, weightMultiplier);

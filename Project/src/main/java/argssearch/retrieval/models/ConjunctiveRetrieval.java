@@ -39,7 +39,11 @@ public class ConjunctiveRetrieval {
 
   public void execute(final String text, final int tokenMinWeight, final int weightMultiplier, final BiConsumer<Integer, Integer> argumentProcessor) {
     List<String> preprocessedText = nlpService.lemmatize(text);
-    String tokenArray = preprocessedText.stream().map(this.cache::get).map(String::valueOf).collect(Collectors.joining(", ", "{", "}"));
+    String tokenArray = preprocessedText.stream()
+        .distinct()
+        .map(this.cache::get)
+        .map(String::valueOf)
+        .collect(Collectors.joining(", ", "{", "}"));
 
     try {
         this.query.setInt(1, weightMultiplier);

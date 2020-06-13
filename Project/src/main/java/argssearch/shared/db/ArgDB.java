@@ -56,7 +56,8 @@ public class ArgDB {
                 "argument_bootstrap.sql",
                 "token_bootstrap.sql",
                 "index_bootstrap.sql",
-                "trigger_bootstrap.sql"
+                "trigger_bootstrap.sql",
+                "functions_bootstrap.sql"
         ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 
         logger.info("Created a new Schema.");

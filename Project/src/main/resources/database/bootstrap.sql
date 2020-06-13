@@ -7,3 +7,4 @@
 \i token_bootstrap.sql
 \i index_bootstrap.sql
 \i trigger_bootstrap.sql
+\i functions_bootstrap.sql
