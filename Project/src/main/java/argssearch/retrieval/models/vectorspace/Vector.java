@@ -6,14 +6,17 @@ import java.util.List;
 
 
 public class Vector {
+
     private List<Double> vector;
+    private int docId;
 
     public Vector() {
         new ArrayList<>();
     }
 
-    public Vector(int size) {
+    public Vector(int size, int docId) {
         vector = new ArrayList<>(Collections.nCopies(size, 0.0));
+        this.docId = docId;
     }
 
     public Vector(List<Double> vector) {
@@ -39,5 +42,9 @@ public class Vector {
 
     public int getSize() {
         return vector.size();
+    }
+
+    public int getDocId() {
+        return docId;
     }
 }

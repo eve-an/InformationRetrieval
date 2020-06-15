@@ -13,7 +13,7 @@ public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
     private final Connection conn;
-    private final String USERNAME = "postgres";
+    private final String USERNAME = "irargdb";
     private final String DB_NAME = "argdb";
     private final String DB_URL = "jdbc:postgresql://localhost:5432/" + DB_NAME;
 
@@ -37,7 +37,7 @@ public class ArgDB {
      */
     public void dropSchema(final String schema) {
         try (Statement stmt = conn.createStatement()) {
-            stmt.execute("DROP SCHEMA IF EXISTS " + schema +  " CASCADE");
+            stmt.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
             stmt.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -95,18 +95,18 @@ public class ArgDB {
     }
 
     public PreparedStatement prepareStatementWithReturnOfId(String query, String primaryKeyAttributeName) {
-		try {
-			return this.conn.prepareStatement(query, new String[]{primaryKeyAttributeName});
-		} catch (SQLException sqlE) {
-			// TODO log this
-			sqlE.printStackTrace();
-		}
-		return null;
-	}
+        try {
+            return this.conn.prepareStatement(query, new String[]{primaryKeyAttributeName});
+        } catch (SQLException sqlE) {
+            // TODO log this
+            sqlE.printStackTrace();
+        }
+        return null;
+    }
 
-	public static boolean isException(SQLException sqle) {
-		return false;
-	}
+    public static boolean isException(SQLException sqle) {
+        return false;
+    }
 
     public ResultSet query(String queryText) {
         try {
@@ -141,10 +141,12 @@ public class ArgDB {
         return null;
     }
 
-    public long getRowCount(String table) {
-        try (ResultSet rs = query(String.format("SELECT COUNT(*) FROM %s", table))) {
+    public int getRowCount(String table) {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + table);
             if (rs.next()) {
-                return rs.getLong(1);
+                return rs.getInt(1);
             }
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -152,6 +154,34 @@ public class ArgDB {
 
         return -1;
     }
+
+    public int getIndexOfTerm(String term) {
+
+        try {
+            PreparedStatement ps = ArgDB.getInstance().getConn().prepareStatement("SELECT tid FROM token WHERE token = ?");
+
+            ps.setString(1, term);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public Statement getStatement() {
+        try {
+            return conn.createStatement();
+        } catch (SQLException throwables) {
+            throw new RuntimeException("Could not create Statement.");
+        }
+    }
+
 
     public Connection getConn() {
         return conn;

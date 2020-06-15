@@ -32,6 +32,8 @@ public class VectorMath {
             throw new ArrayIndexOutOfBoundsException("Vectors must be of same size.");
         }
 
-        return dotProduct(l, r) / (l.norm() * r.norm());
+        double sim = dotProduct(l, r) / (l.norm() * r.norm());
+
+        return Double.isNaN(sim) ? -1 : sim;
     }
 }
