@@ -1,4 +1,4 @@
-package argssearch.retrieval.models;
+package argssearch.retrieval.models.vectorspace;
 
 /**
  * Math class for vector operations

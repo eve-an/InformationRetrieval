@@ -153,6 +153,10 @@ public class ArgDB {
         return -1;
     }
 
+    public Connection getConn() {
+        return conn;
+    }
+
     private static class InstanceHolder {
         private static ArgDB argDBInstance;
     }

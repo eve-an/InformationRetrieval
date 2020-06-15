@@ -3,13 +3,13 @@ package argssearch;
 
 import argssearch.acquisition.Acquisition;
 import argssearch.indexing.index.Indexer;
+import argssearch.retrieval.models.vectorspace.DocumentTerm;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -21,7 +21,7 @@ public class Main {
 
     public static void main(String[] args) {
         //readIntoDatabase("/home/ivan/Documents/IR_JSONS");
-        index();
+        //index();
     }
 
     /**
