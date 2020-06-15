@@ -64,24 +64,19 @@ class JsonDbUtil {
     public void save(Premise premise, Argument argument) {
         try {
             insertPremise.setString(1, premise.getCrawlId());
-            insertPremise.setString(2, premise.getTitle());
+            insertPremise.setString(2, argument.getContent());
             insertPremise.addBatch();
-        } catch (SQLException throwables) {
-            throw new RuntimeException(throwables.getLocalizedMessage());
-        }
-        save(argument);
-    }
 
-    public void save(Argument argument) {
-        try {
             insertArgument.setString(1, argument.getCrawlId());
-            insertArgument.setString(2, argument.getContent());
+            insertArgument.setString(2, premise.getTitle());
             insertArgument.setBoolean(3, argument.isPro());
             insertArgument.addBatch();
         } catch (SQLException throwables) {
-            throw new RuntimeException(throwables.getMessage());
+            throw new RuntimeException(throwables.getLocalizedMessage());
         }
     }
+
+
 
     public void execBatch() {
         try {

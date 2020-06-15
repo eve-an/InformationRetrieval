@@ -13,7 +13,7 @@ public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
     private final Connection conn;
-    private final String USERNAME = "irargdb";
+    private final String USERNAME = "postgres";
     private final String DB_NAME = "argdb";
     private final String DB_URL = "jdbc:postgresql://localhost:5432/" + DB_NAME;
 
