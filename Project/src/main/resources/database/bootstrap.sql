@@ -1,3 +1,5 @@
+SET search_path TO public;
+
 -- globals
 -- table bootstraps
 \i source_bootstrap.sql

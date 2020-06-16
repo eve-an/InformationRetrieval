@@ -18,13 +18,15 @@ public class Indexer {
   }
 
   private Indexer(CoreNlpService nlpService, TokenCache tokenCache) {
-
+      System.out.println("START indexing the argument table");
       indexFor(nlpService, tokenCache, new ArgumentTable(), new ArgumentIndexTable(), 100);
       System.out.println("FINISHED indexing the argument table");
 
+      System.out.println("START indexing the premise table");
       indexFor(nlpService, tokenCache, new PremiseTable(), new PremiseIndexTable(), 1000);
       System.out.println("FINISHED indexing the premise table");
 
+      System.out.println("START indexing the discussion table");
       indexFor(nlpService, tokenCache, new DiscussionTable(), new DiscussionIndexTable(), 1000);
       System.out.println("FINISHED indexing the discussion table");
   }
