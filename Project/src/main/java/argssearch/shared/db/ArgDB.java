@@ -57,6 +57,7 @@ public class ArgDB {
                 "token_bootstrap.sql",
                 "index_bootstrap.sql",
                 "trigger_bootstrap.sql",
+                "aggregate_bootstrap.sql",
                 "functions_bootstrap.sql"
         ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 

@@ -9,4 +9,5 @@ SET search_path TO public;
 \i token_bootstrap.sql
 \i index_bootstrap.sql
 \i trigger_bootstrap.sql
+\i aggregate_bootstrap.sql
 \i functions_bootstrap.sql

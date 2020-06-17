@@ -57,8 +57,7 @@ public class PhraseRetrieval {
     // A B C
     String tokenArray = preprocessedText.stream().distinct().map(String::valueOf).collect(
         Collectors.joining(", ", "{", "}"));
-    System.out.println("tokenOrder: " + tokenOrder);
-    System.out.println("tokenArray: " + tokenArray);
+
     try {
       query.setString(1, tokenOrder);
       query.setInt(2, weightMultiplier);
