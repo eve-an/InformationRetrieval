@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS argument_index (
   tID INT REFERENCES token NOT NULL,
   argID INT REFERENCES argument NOT NULL,
-  weight SMALLINT DEFAULT 0,
+  weight DECIMAL DEFAULT 0.0,
   occurrences INT NOT NULL,
   offsets SMALLINT ARRAY NOT NULL,
   PRIMARY KEY(tID, argID)
@@ -20,7 +20,7 @@ CREATE INDEX IF NOT EXISTS arg_index_idx ON argument_index (tID) INCLUDE (argID)
 CREATE TABLE IF NOT EXISTS premise_index (
   tID INT REFERENCES token NOT NULL,
   pID INT REFERENCES premise NOT NULL,
-  weight SMALLINT DEFAULT 0,
+  weight DECIMAL DEFAULT 0.0,
   occurrences INT NOT NULL,
   offsets SMALLINT ARRAY NOT NULL,
   PRIMARY KEY(tID, pID)
@@ -30,7 +30,7 @@ CREATE INDEX IF NOT EXISTS premise_index_idx ON premise_index (tID) INCLUDE (pID
 CREATE TABLE IF NOT EXISTS discussion_index (
   tID INT REFERENCES token NOT NULL,
   dID INT REFERENCES discussion NOT NULL,
-  weight SMALLINT DEFAULT 0,
+  weight DECIMAL DEFAULT 0.0,
   occurrences INT NOT NULL,
   offsets SMALLINT ARRAY NOT NULL,
   PRIMARY KEY(tID, dID)

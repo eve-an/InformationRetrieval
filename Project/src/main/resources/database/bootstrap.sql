@@ -11,3 +11,4 @@ SET search_path TO public;
 \i trigger_bootstrap.sql
 \i aggregate_bootstrap.sql
 \i functions_bootstrap.sql
+\i procedure_bootstrap.sql

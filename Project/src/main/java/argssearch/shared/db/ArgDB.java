@@ -1,5 +1,6 @@
 package argssearch.shared.db;
 
+import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,14 +59,18 @@ public class ArgDB {
                 "index_bootstrap.sql",
                 "trigger_bootstrap.sql",
                 "aggregate_bootstrap.sql",
-                "functions_bootstrap.sql"
+                "functions_bootstrap.sql",
+                "procedure_bootstrap.sql"
         ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 
         logger.info("Created a new Schema.");
     }
 
     public void executeSqlFile(String relativePath) {
-        final String path = getClass().getResource(relativePath).getPath();
+        String path = getClass().getResource(relativePath).getPath();
+        if (System.getProperty("os.name").toLowerCase().startsWith("windows") && path.startsWith("/")) {
+            path = path.substring(1);
+        }
         final ProcessBuilder pb = new ProcessBuilder("psql", "-U", USERNAME, "-d", DB_NAME, "-f", path);
 
         try {
@@ -100,6 +105,33 @@ public class ArgDB {
             return this.conn.prepareStatement(query, new String[]{primaryKeyAttributeName});
         } catch (SQLException sqlE) {
             // TODO log this
+            sqlE.printStackTrace();
+        }
+        return null;
+    }
+
+    public void executeNativeSql(final String sql) throws SQLException{
+
+        final ProcessBuilder pb = new ProcessBuilder("psql", "-U", USERNAME, "-d", DB_NAME, "-c", sql);
+
+        try {
+            Process p = pb.start();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            String output;
+            while ((output = br.readLine()) != null) {
+                logger.info(output);
+            }
+
+        } catch (IOException e) {
+            logger.error("Error while executing {}", sql, e);
+        }
+    }
+
+    public CallableStatement prepareCall(final String sql) {
+        try {
+            return this.conn.prepareCall(sql);
+        } catch (SQLException sqlE) {
             sqlE.printStackTrace();
         }
         return null;
