@@ -8,10 +8,10 @@ DECLARE
     tid INT;
     tf INT;
 
-    N INT;
-    tokenOcc INT;
+    N DECIMAL;
+    tokenOcc DECIMAL;
 
-    totalIndexRows BIGINT;
+    totalIndexRows DECIMAL;
     rowCounter BIGINT := 0;
     progress INT;
 BEGIN
@@ -27,7 +27,7 @@ BEGIN
 
         EXECUTE FORMAT('UPDATE %s SET weight=%s WHERE %s=%s AND tid=%s;', index_tableName, tf*(ln(N/tokenOcc)), refAttName, refId, tid);
 
-        IF rowCounter % (totalIndexRows / 10) = 0 THEN
+        IF totalIndexRows >= 10 AND rowCounter % (totalIndexRows / 10) = 0 THEN
             RAISE NOTICE 'indexed %/% of tabel %)', rowCounter, totalIndexRows, index_tableName;
         END IF;
         rowCounter := rowCounter + 1;
