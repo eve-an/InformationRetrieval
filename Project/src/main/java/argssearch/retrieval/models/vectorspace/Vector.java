@@ -4,25 +4,32 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
+/**
+ * A Vector represents a term or document.
+ * Its entries are weights of the tokens.
+ */
 public class Vector {
 
-    private List<Double> vector;
-    private int docId;
+    private final List<Double> vector;    // Store weights in a List
+    private final int docId;
 
-    public Vector() {
-        new ArrayList<>();
-    }
-
+    /**
+     * Constructs a Vector with given size and initialize it's weight with 0.
+     * Also store the Id of the corresponding document.
+     *
+     * @param size  number of elements of the vector
+     * @param docId document's id
+     */
     public Vector(int size, int docId) {
         vector = new ArrayList<>(Collections.nCopies(size, 0.0));
         this.docId = docId;
     }
 
-    public Vector(List<Double> vector) {
-        this.vector = vector;
-    }
-
+    /**
+     * Computes the euclidean norm of this vector which is geometrically the length of the vector.
+     *
+     * @return euclidean norm / length of vector
+     */
     public double norm() {
         double sum = 0;
         for (int i = 0; i < this.getSize(); i++) {

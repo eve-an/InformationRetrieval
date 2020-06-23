@@ -6,33 +6,49 @@ import argssearch.shared.nlp.CoreNlpService;
 
 import java.util.List;
 
+/**
+ * Manages Vector Space retrieval.
+ */
 public class VectorSpace {
 
-    private final DocumentTerm matrix;
+    private final DocumentTermMatrix matrix;
     private final Weighter weighter;
     private final CoreNlpService nlpService;
 
+    /**
+     * On construction a document term matrix will be created and filled with the document's terms weight.
+     *
+     * @param nlpService
+     */
     public VectorSpace(CoreNlpService nlpService) {
         this.nlpService = nlpService;
         weighter = new Weighter();
-        matrix = new DocumentTerm();
+        matrix = new DocumentTermMatrix();
         matrix.addDocuments(weighter);
     }
 
+    /**
+     * Execute query and retrieve results saved in a {@link Document}.
+     *
+     * @param query Search term.
+     */
     public void query(String query) {
         Vector q = queryToVector(query);
-
         List<Document> results = matrix.processQuery(q);
 
         if (!results.isEmpty()) {
-
             for (int i = 0; i < 10; i++) {
                 System.out.println(results.get(i));
             }
         }
-
     }
 
+    /**
+     * The query will be transformed to a Vector which saves the weight of the tokens of the query.
+     *
+     * @param query user query
+     * @return Vector representation of query.
+     */
     private Vector queryToVector(String query) {
         Vector vector = new Vector(weighter.getArgumentCount(), 0);
         List<String> tokens = nlpService.lemmatize(query);

@@ -5,7 +5,13 @@ package argssearch.retrieval.models.vectorspace;
  */
 public class VectorMath {
 
-
+    /**
+     * Scalar product of two vectors. Vectors need to be of same size.
+     *
+     * @param l left vector
+     * @param r right vector
+     * @return sum of products of corresponding entries
+     */
     public static double dotProduct(final Vector l, final Vector r) {
         if (l.getSize() != r.getSize()) {
             throw new ArrayIndexOutOfBoundsException("Vectors must be of same size.");

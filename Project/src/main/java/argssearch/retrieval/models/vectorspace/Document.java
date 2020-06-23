@@ -2,7 +2,11 @@ package argssearch.retrieval.models.vectorspace;
 
 import java.util.Objects;
 
+/**
+ * POJO to store Document information. Used for ranking.
+ */
 public class Document implements Comparable<Document> {
+
     private int id;
     private double rank;
 
@@ -42,6 +46,12 @@ public class Document implements Comparable<Document> {
         return Objects.hash(id, rank);
     }
 
+    /**
+     * This document is less when his rank is smaller than the other's document rank.
+     *
+     * @param document other document
+     * @return -1 when less, 0 when equal, 1 when greater.
+     */
     @Override
     public int compareTo(Document document) {
         return Double.compare(document.rank, this.rank);

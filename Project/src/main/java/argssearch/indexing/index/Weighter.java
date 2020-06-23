@@ -2,28 +2,20 @@ package argssearch.indexing.index;
 
 import argssearch.shared.db.*;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Weighter {
 
-    private int argumentCount;
-    private int discussionCount;
-    private int premiseCount;
-    private final AbstractTable argument = new ArgumentTable();
-    private final AbstractIndexTable argumentIndex = new ArgumentIndexTable();
-
+    private final int argumentCount;
+    private final int discussionCount;
+    private final int premiseCount;
 
     public Weighter() {
-
         argumentCount = ArgDB.getInstance().getRowCount("argument");
         discussionCount = ArgDB.getInstance().getRowCount("discussion");
         premiseCount = ArgDB.getInstance().getRowCount("premise");
-
     }
 
     private int getTF(String term, int id, AbstractTable table, AbstractIndexTable index) {
@@ -72,7 +64,7 @@ public class Weighter {
         return 0;
     }
 
-    private double getIDF(String token, int id, AbstractTable table, AbstractIndexTable index, String counterName) {
+    private double getTfIdf(String token, int id, AbstractTable table, AbstractIndexTable index, String counterName) {
         double tf = getTF(token, id, table, index);
         double df = getDf(token, counterName);
 
@@ -83,8 +75,16 @@ public class Weighter {
         }
     }
 
-    public double getArgumentIdf(String token, int id) {
-        return getIDF(token, id, argument, argumentIndex, "argumentcounter");
+    public double getDiscussionTfIdf(String token, int id) {
+        return getTfIdf(token, id, new DiscussionTable(), new DiscussionIndexTable(), "discussioncounter");
+    }
+
+    public double getPremiseTfIdf(String token, int id) {
+        return getTfIdf(token, id, new PremiseTable(), new PremiseIndexTable(), "premisecounter");
+    }
+
+    public double getArgumentTfIdf(String token, int id) {
+        return getTfIdf(token, id, new ArgumentTable(), new ArgumentIndexTable(), "argumentcounter");
     }
 
     public int getArgumentCount() {
