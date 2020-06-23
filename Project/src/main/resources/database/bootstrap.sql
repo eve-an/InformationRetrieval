@@ -12,3 +12,4 @@ SET search_path TO public;
 \i aggregate_bootstrap.sql
 \i functions_bootstrap.sql
 \i procedure_bootstrap.sql
+--\i sample_values.sql
