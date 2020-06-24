@@ -34,7 +34,7 @@ public class ArgDB {
     }
 
     /**
-     * Drop everything owned by the given Username.
+     * Drop given Schema
      */
     public void dropSchema(final String schema) {
         try (Statement stmt = conn.createStatement()) {
@@ -44,6 +44,21 @@ public class ArgDB {
             throwables.printStackTrace();
         }
         logger.info("Dropped " + schema);
+    }
+
+    /**
+     * Truncates table
+     *
+     * @param table table name
+     */
+    public void truncateTable(final String table) {
+        try (Statement stmt = conn.createStatement()){
+            stmt.execute("TRUNCATE Table " + table);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+
+        logger.info("Truncated Table " + table);
     }
 
     /**
@@ -60,7 +75,10 @@ public class ArgDB {
                 "trigger_bootstrap.sql",
                 "aggregate_bootstrap.sql",
                 "functions_bootstrap.sql",
-                "procedure_bootstrap.sql"
+                "procedure_bootstrap.sql",
+                "type_bootstrap.sql",
+                "vectorspace.sql",
+                "view_bootstrap.sql"
         ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 
         logger.info("Created a new Schema.");

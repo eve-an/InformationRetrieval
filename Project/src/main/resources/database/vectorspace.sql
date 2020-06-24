@@ -1,12 +1,13 @@
 -- TODO: Put table somewhere else but not here
--- TODO: Implement Retrieval for Discussion and Premise (currently only Arguments are retrieved)
 -- TODO: Speed up!
 
 DROP TABLE IF EXISTS retrieved_documents;
 CREATE TABLE retrieved_documents
 (
-    docId INT PRIMARY KEY,
-    rank  numeric CHECK (rank >= 0) NOT NULL
+    docId   INT,
+    rank    numeric CHECK (rank >= 0) NOT NULL,
+    docType documenttype              NOT NULL,
+    PRIMARY KEY (docId, docType)
 );
 
 CREATE OR REPLACE FUNCTION insertWeights(size int, idArray int[], weightArray numeric[])
@@ -102,51 +103,49 @@ BEGIN
 end;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE vectorRetrieval(queryArray text[], forTable text)
+CREATE OR REPLACE PROCEDURE vectorRetrieval(queryArray varchar[],
+                                            minRank double precision,
+                                            forTable varchar, -- e.g. argument
+                                            tableIdName varchar, -- id = argid
+                                            tableIndexName varchar, -- argument_index
+                                            tableIndexIdName varchar) -- index-id = argid
 AS
 $$
 DECLARE
-    minRank CONSTANT REAL := 0.3;
-    curs             refcursor;
-    docId            INT;
-    tokenIdArray     Int[];
-    weightArray      numeric[];
-    currentVec       numeric[]; -- Vector as Array to store weights
-    tokenSize        INT; -- Size of Vector
-    queryVector      numeric[];
-    sim              numeric; -- Cosine similarity of two vectors
-    count            int;
+    curs         refcursor;
+    docId        INT;
+    tokenIdArray Int[];
+    weightArray  numeric[];
+    currentVec   numeric[]; -- Vector as Array to store weights
+    tokenSize    INT; -- Size of Vector
+    queryVector  numeric[];
+    sim          numeric; -- Cosine similarity of two vectors
 
 BEGIN
     SELECT count(*) INTO tokenSize FROM token;
 
     -- docId | Array of Tokens | Array of Weights of tokens
-    OPEN curs FOR
-        SELECT a.argid, array_agg(tid), array_agg(weight)
-        FROM argument a
-                 LEFT JOIN argument_index ai on a.argid = ai.argid
-        GROUP BY a.argid
-        ORDER BY a.argid;
+    OPEN curs FOR EXECUTE FORMAT('SELECT doc.%s, array_agg(tid), array_agg(weight)
+        FROM %s AS doc
+                 LEFT JOIN %s index on doc.%s = index.%s
+        GROUP BY doc.%s
+        ORDER BY doc.%s', tableIdName, forTable, tableIndexName, tableIdName, tableIndexIdName,
+                                 tableIdName, tableIdName);
 
     queryVector = queryToVector(queryArray, tokenSize);
-
     LOOP
         FETCH curs INTO docId, tokenIdArray, weightArray;
         EXIT WHEN NOT FOUND;
-        count = count + 1;
+
         currentVec = insertWeights(tokenSize, tokenIdArray, weightArray);
         sim = similarity(queryVector, currentVec);
 
         if sim > minRank then
-            RAISE NOTICE 'Added Document % !', docId;
-            INSERT INTO retrieved_documents VALUES (docId, sim);
+            -- RAISE NOTICE 'Added Document % !', docId;
+            INSERT INTO retrieved_documents VALUES (docId, sim, forTable::documenttype);
         end if;
 
-        if mod(count, 100) = 0 THEN RAISE NOTICE 'Processed % Documents', count; end if;
-
-
     END LOOP;
-    COMMIT;
     CLOSE curs;
 END ;
 $$ LANGUAGE plpgsql;
