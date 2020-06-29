@@ -7,12 +7,18 @@ import java.util.Objects;
  */
 public class Document implements Comparable<Document> {
 
+    enum Type {
+        ARGUMENT, PREMISE, DISCUSSION
+    }
+
     private int id;
+    private Type type;
     private double rank;
 
-    public Document(int id, double rank) {
+    public Document(int id, double rank, Type type) {
         this.id = id;
         this.rank = rank;
+        this.type = type;
     }
 
     public int getId() {
@@ -31,19 +37,19 @@ public class Document implements Comparable<Document> {
         this.rank = rank;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Document document = (Document) o;
         return id == document.id &&
-                Double.compare(document.rank, rank) == 0;
+                Double.compare(document.rank, rank) == 0 &&
+                type == document.type;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, rank);
+        return Objects.hash(id, type, rank);
     }
 
     /**
@@ -60,7 +66,8 @@ public class Document implements Comparable<Document> {
     @Override
     public String toString() {
         return "Document{" +
-                "id=" + id +
+                "type=" + type.toString() +
+                ", id=" + id +
                 ", rank=" + rank +
                 '}';
     }

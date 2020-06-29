@@ -35,6 +35,8 @@ public class Acquisition {
         } else {    // Read a single file
             read(path, queue);
         }
+
+        es.shutdown();
     }
 
     private static void read(String path, BlockingDeque<JsonArgument> queue) {

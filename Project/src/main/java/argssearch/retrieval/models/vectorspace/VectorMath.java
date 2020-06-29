@@ -17,7 +17,7 @@ public class VectorMath {
             throw new ArrayIndexOutOfBoundsException("Vectors must be of same size.");
         }
 
-        double sum = 0;
+        double sum = 0.0;
         for (int i = 0; i < l.getSize(); i++) {
             sum += l.get(i) * r.get(i);
         }
@@ -38,8 +38,11 @@ public class VectorMath {
             throw new ArrayIndexOutOfBoundsException("Vectors must be of same size.");
         }
 
-        double sim = dotProduct(l, r) / (l.norm() * r.norm());
+        double lnorm = l.getNorm2();
+        if (lnorm == 0.0) return 0.0;
+        double rnorm = r.getNorm2();
+        if (rnorm == 0.0) return 0.0;
 
-        return Double.isNaN(sim) ? -1 : sim;
+        return dotProduct(l, r) / (rnorm * lnorm);
     }
 }

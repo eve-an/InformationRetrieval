@@ -1,8 +1,5 @@
 package argssearch.retrieval.models.vectorspace;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * A Vector represents a term or document.
@@ -10,7 +7,8 @@ import java.util.List;
  */
 public class Vector {
 
-    private final List<Double> vector;    // Store weights in a List
+    private final double[] vector;    // Store weights in a List
+    private double norm2;
     private final int docId;
 
     /**
@@ -21,8 +19,9 @@ public class Vector {
      * @param docId document's id
      */
     public Vector(int size, int docId) {
-        vector = new ArrayList<>(Collections.nCopies(size, 0.0));
+        vector = new double[size];
         this.docId = docId;
+        norm2 = -1.0;
     }
 
     /**
@@ -30,28 +29,35 @@ public class Vector {
      *
      * @return euclidean norm / length of vector
      */
-    public double norm() {
-        double sum = 0;
-        for (int i = 0; i < this.getSize(); i++) {
-            sum += this.get(i) * this.get(i);
+    private double norm() {
+        double sum = 0.0;
+        for (double v : this.vector) {
+            sum += v * v;
         }
 
         return Math.sqrt(sum);
     }
 
     public void set(int index, double weight) {
-        vector.set(index, weight);
+        vector[index] = weight;
     }
 
     public double get(int index) {
-        return vector.get(index);
+        return vector[index];
     }
 
     public int getSize() {
-        return vector.size();
+        return vector.length;
     }
 
     public int getDocId() {
         return docId;
+    }
+
+    public double getNorm2() {
+        if (norm2 == -1.0) {
+            norm2 = norm();
+        }
+        return norm2;
     }
 }
