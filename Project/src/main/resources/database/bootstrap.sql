@@ -8,8 +8,6 @@ SET search_path TO public;
 \i argument_bootstrap.sql
 \i token_bootstrap.sql
 \i index_bootstrap.sql
-\i trigger_bootstrap.sql
 \i aggregate_bootstrap.sql
 \i functions_bootstrap.sql
 \i procedure_bootstrap.sql
---\i sample_values.sql

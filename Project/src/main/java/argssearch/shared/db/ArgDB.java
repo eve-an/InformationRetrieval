@@ -72,7 +72,6 @@ public class ArgDB {
                 "argument_bootstrap.sql",
                 "token_bootstrap.sql",
                 "index_bootstrap.sql",
-                "trigger_bootstrap.sql",
                 "aggregate_bootstrap.sql",
                 "functions_bootstrap.sql",
                 "procedure_bootstrap.sql",
@@ -204,6 +203,14 @@ public class ArgDB {
         }
 
         return -1;
+    }
+
+    public void clearTable(final String tableName) {
+        try {
+           executeNativeSql(String.format("DELETE FROM %s", tableName));
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public int getIndexOfTerm(String term) {
