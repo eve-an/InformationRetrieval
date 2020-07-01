@@ -48,7 +48,6 @@ def main():
     # args = [opt for opt in sys.argv[1:] if not opt.startswith("-")]
 
     if len(opts) == 0:
-        build_project(str(project_dir))
         build_docker("docker/Dockerfile", "argssearch", str(project_dir))
         run_docker_compose(docker_compose_yml)
 
