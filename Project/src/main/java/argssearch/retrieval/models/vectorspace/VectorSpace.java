@@ -20,6 +20,7 @@ public class VectorSpace {
      * SQL queries to get the index of documents in the form of
      *  doc_id | token_ids | weights_of_tokens
      */
+    // TODO: Additionally retrieve the crawlid for TREC Result
     static class Query {
         final static String argument = "SELECT argid, array_agg(tid), array_agg(weight::double precision) " +
                 "FROM argument_index " +
@@ -58,6 +59,7 @@ public class VectorSpace {
                 .forEach(id -> queryVector.set(id - 1, 0.5));   // Postgres starts indices with 1
     }
 
+    // TODO: Implement the Result class instead of Document
     public List<Document> query(final String query, final double minRank) {
         loadQuery(query);
 
