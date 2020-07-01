@@ -1,6 +1,5 @@
 package argssearch.shared.db;
 
-import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,15 +12,30 @@ import java.util.stream.Stream;
 public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
-    private final Connection conn;
-    private final String USERNAME = "irargdb";
-    private final String DB_NAME = "argdb";
-    private final String DB_URL = "jdbc:postgresql://localhost:5432/" + DB_NAME;
+    private Connection conn;
+    private static String USERNAME = "irargdb";
+    private static String PASSWORD = "";
+    private static String DB_NAME = "argdb";
+    // Append &password=your_password when you have a password for your db
+    public static String DB_URL = String.format("jdbc:postgresql://localhost:5432/%s?user=%s", DB_NAME, USERNAME);
 
-    private ArgDB() {
+
+    public void connectToDB(final String url) {
         try {
-            this.conn = DriverManager.getConnection(DB_URL, USERNAME, "");
-        } catch (SQLException e) {
+            // Register Postgres Driver
+            Class.forName("org.postgresql.Driver");
+            this.conn = DriverManager.getConnection(url);
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public void connectToDB() {
+        try {
+            // Register Postgres Driver
+            Class.forName("org.postgresql.Driver");
+            this.conn = DriverManager.getConnection(DB_URL);
+        } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -52,7 +66,7 @@ public class ArgDB {
      * @param table table name
      */
     public void truncateTable(final String table) {
-        try (Statement stmt = conn.createStatement()){
+        try (Statement stmt = conn.createStatement()) {
             stmt.execute("TRUNCATE Table " + table);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -128,7 +142,7 @@ public class ArgDB {
         return null;
     }
 
-    public void executeNativeSql(final String sql) throws SQLException{
+    public void executeNativeSql(final String sql) throws SQLException {
 
         final ProcessBuilder pb = new ProcessBuilder("psql", "-U", USERNAME, "-d", DB_NAME, "-c", sql);
 

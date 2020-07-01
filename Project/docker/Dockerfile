@@ -1,17 +1,19 @@
-FROM maven:3.6-jdk-13-alpine AS target
-
-WORKDIR /build
+# build project
+FROM maven:latest AS build
+WORKDIR /usr/src/app
 COPY pom.xml .
+# cache most of the dependecies as long as pom doesn't change
+RUN mvn dependency:go-offline
 
-# Cache dependencies as long as they don't change
-# Dependencies don't change that much so we save a little time
-RUN mvn dependency:go-offline 
+COPY src /usr/src/app/src/
+RUN mvn package
 
-# Copy sources and build them
-COPY src/ /build/src/
-RUN mvn clean package
+########################################################################################################################
 
-
+# Move jar from build to final image and execute it
 FROM openjdk:13-alpine
-CMD exec java $JAVA_OPTS -jar /app/my-app.jar
-COPY --from=target /build/target/*spring-boot.jar /app/my-app.jar
+COPY --from=build "/usr/src/app/target/ArgsSearch-1.0-shaded.jar" /usr/src/app/app.jar
+WORKDIR /usr/src/app/
+
+# On run execute the jar and hand over the database url as parameter
+CMD ["java", "-jar", "app.jar", "jdbc:postgresql://db:5432/argdb?user=irargdb&password=1234"]

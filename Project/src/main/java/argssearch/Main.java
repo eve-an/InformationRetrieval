@@ -7,13 +7,42 @@ import argssearch.retrieval.models.vectorspace.VectorSpace;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class Main {
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
+    /* TODO: Extract args; Idea:
+        First Arg = JDBC URL for Docker
+        Second Arg = Query Input path
+        Third Arg = Query Output path
+    */
     public static void main(String[] args) {
+        logger.info("Starting ArgsSearch...");
+
+        if (args.length == 1) {
+            ArgDB.getInstance().connectToDB(args[0]);
+        } else {
+            ArgDB.getInstance().connectToDB();
+        }
+
+        logger.info("Connected to DB.");
+
+        ResultSet rs = ArgDB.getInstance().query("SELECT version()");
+
+        try {
+            if (rs.next()) {
+                System.out.println(rs.getString(1));
+            }
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
     }
 
     /**
