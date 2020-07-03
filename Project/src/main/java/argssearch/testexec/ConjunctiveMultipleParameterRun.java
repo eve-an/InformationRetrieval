@@ -16,6 +16,7 @@ public class ConjunctiveMultipleParameterRun {
 
   private static final String outputTemplate = "%d Q0 %d %f Montalet\n";
 
+  /*
   public ConjunctiveMultipleParameterRun(final CoreNlpService service, final TokenCache cache, final String outputFolderDir, final Topic t, final int bounds) {
     ConjunctiveRetrievalOnAllTables ret = new ConjunctiveRetrievalOnAllTables(service, cache);
     Logger logger = LoggerFactory.getLogger(this.getClass().getName());
@@ -48,4 +49,5 @@ public class ConjunctiveMultipleParameterRun {
       }
     }
   }
+  */
 }
