@@ -1,18 +1,11 @@
 package argssearch;
 
-import argssearch.acquisition.Acquisition;
-import argssearch.indexing.index.Indexer;
-import argssearch.retrieval.models.vectorspace.VectorSpace;
-import argssearch.shared.cache.TokenCachePool;
+import argssearch.retrieval.models.ModelType;
 import argssearch.shared.db.ArgDB;
-import argssearch.shared.nlp.CoreNlpService;
-import argssearch.shared.query.Result;
 import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.concurrent.LinkedBlockingDeque;
 
 public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -32,44 +25,20 @@ public class Main {
         }
 
         logger.info("Connected to DB.");
+
+        // Example Topic from Touche
+        // https://events.webis.de/touche-20/shared-task-1.html#submission
+        String exampleTitle = "Is climate change real?";
+        String exampleDescription = "You read an opinion piece on how climate change is a hoax and disagree. " +
+                "Now you are looking for arguments supporting the claim that climate change is in fact real.";
+        String exampleNarrative = "Relevant arguments will support the given stance that climate change is real " +
+                "or attack a hoax side's argument.";
+
+        Topic example = new Topic(1, exampleTitle, exampleDescription, exampleNarrative);
+
+        //Pipeline pipeline = new Pipeline(example, "/path/to/json_directory");
+        Pipeline pipeline = new Pipeline(example);
+
+        pipeline.exec(ModelType.VECTOR_SPACE);  // Retrieve Documents
     }
-
-    /**
-     * Read JSONs into a database.
-     * When jsonPath is a directory the whole directory will be read.
-     *
-     * @param jsonPath path to jsons
-     */
-    static void readIntoDatabase(final String jsonPath) {
-        // Start with a new, clean schema
-        ArgDB.getInstance().dropSchema("public");
-        ArgDB.getInstance().createSchema();
-        Acquisition.exec(jsonPath, new LinkedBlockingDeque<>(16));
-    }
-
-    /**
-     * Index Documents
-     */
-    static void index(final CoreNlpService nlpService) {
-        Indexer.index(nlpService, TokenCachePool.getInstance().get(Integer.MAX_VALUE));
-        ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
-    }
-
-    /**
-     * Retrieve relevant documents with {@link VectorSpace}-Model.
-     *
-     * @param query      query to process with VSM
-     * @param minRank    Documents with a rank which is smaller than minRank will not be returned
-     * @param nlpService to get the lemmatized query
-     */
-    static void queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService) {
-        VectorSpace vs = new VectorSpace(nlpService);
-        List<Result> results = vs.query(query, minRank);
-
-        for (Result result : results) {
-            System.out.println(result);
-        }
-    }
-
-
 }
