@@ -9,18 +9,14 @@ public class Vector {
 
     private final double[] vector;    // Store weights in a List
     private double norm2;
-    private final int docId;
 
     /**
      * Constructs a Vector with given size and initialize it's weight with 0.
-     * Also store the Id of the corresponding document.
      *
      * @param size  number of elements of the vector
-     * @param docId document's id
      */
-    public Vector(int size, int docId) {
+    public Vector(int size) {
         vector = new double[size];
-        this.docId = docId;
         norm2 = -1.0;
     }
 
@@ -48,10 +44,6 @@ public class Vector {
 
     public int getSize() {
         return vector.length;
-    }
-
-    public int getDocId() {
-        return docId;
     }
 
     public double getNorm2() {

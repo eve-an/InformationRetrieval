@@ -1,32 +1,23 @@
-CREATE OR REPLACE VIEW retrieved_documents_view AS
-SELECT rd.docid, rd.doctype, rd.rank, a.content
-FROM retrieved_documents rd
-         LEFT JOIN argument a on a.argid = rd.docid
-WHERE rd.doctype = 'argument'
+DROP MATERIALIZED VIEW IF EXISTS inverted_argument_index_view;
+CREATE MATERIALIZED VIEW inverted_argument_index_view AS
+SELECT crawlid, array_agg(tid) token_id_array, array_agg(weight::double precision) token_weight_array
+FROM argument_index
+         JOIN argument a on argument_index.argid = a.argid
+GROUP BY crawlid
+WITH DATA;
 
-UNION
+DROP MATERIALIZED VIEW IF EXISTS inverted_premise_index_view;
+CREATE MATERIALIZED VIEW inverted_premise_index_view AS
+SELECT crawlid, array_agg(tid) token_id_array, array_agg(weight::double precision) token_weight_array
+FROM premise_index
+         JOIN premise p on premise_index.pid = p.pid
+GROUP BY crawlid
+WITH DATA;
 
-SELECT rd.docid, rd.doctype, rd.rank, p.title
-FROM retrieved_documents rd
-         LEFT JOIN premise p on p.pid = rd.docid
-WHERE rd.doctype = 'premise'
-
-UNION
-
-SELECT rd.docid, rd.doctype, rd.rank, d.title
-FROM retrieved_documents rd
-         LEFT JOIN discussion d on d.did = rd.docid
-WHERE rd.doctype = 'discussion';
-
-
-CREATE OR REPLACE VIEW discussion_view AS
-SELECT d.did     discussion_id,
-       d.title   discussion_title,
-       p.pid     premise_id,
-       p.title   premise_title,
-       a.argid   argument_id,
-       a.content argument_content,
-       a.ispro argument_is_pro
-FROM discussion d
-         LEFT JOIN premise p on d.did = p.did
-         LEFT JOIN argument a on p.pid = a.pid;
+DROP MATERIALIZED VIEW IF EXISTS inverted_discussion_index_view;
+CREATE MATERIALIZED VIEW inverted_discussion_index_view AS
+SELECT crawlid, array_agg(tid) token_id_array, array_agg(weight::double precision) token_weight_array
+FROM discussion_index
+         JOIN discussion d on discussion_index.did = d.did
+GROUP BY crawlid
+WITH DATA;

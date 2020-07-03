@@ -1,37 +1,33 @@
 package argssearch.retrieval.models.vectorspace;
 
+import argssearch.Main;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
+import argssearch.shared.query.Result;
+import argssearch.shared.query.Topic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
  * Manages Vector Space retrieval.
  */
 public class VectorSpace {
+    private static final Logger logger = LoggerFactory.getLogger(VectorSpace.class);
 
     /**
      * SQL queries to get the index of documents in the form of
-     *  doc_id | token_ids | weights_of_tokens
+     * doc_id | token_ids | weights_of_tokens
      */
     static class Query {
-        final static String argument = "SELECT argid, array_agg(tid), array_agg(weight::double precision) " +
-                "FROM argument_index " +
-                "GROUP BY argid";
-
-        final static String discussion = "SELECT did, array_agg(tid), array_agg(weight::double precision) " +
-                "FROM discussion_index " +
-                "GROUP BY did";
-
-        final static String premise = "SELECT pid, array_agg(tid), array_agg(weight::double precision) " +
-                "FROM premise_index " +
-                "GROUP BY pid";
+        final static String argument = "SELECT * FROM inverted_argument_index_view";
+        final static String discussion = "SELECT * FROM inverted_discussion_index_view";
+        final static String premise = "SELECT * FROM inverted_premise_index_view";
     }
 
     private final CoreNlpService nlpService;
@@ -44,6 +40,13 @@ public class VectorSpace {
     public VectorSpace(CoreNlpService nlpService) {
         this.nlpService = nlpService;
         vectorSize = ArgDB.getInstance().getRowCount("token");
+
+        // refresh materialized views when they are empty
+        if (ArgDB.getInstance().getRowCount("inverted_argument_index_view") == 0 ||
+                ArgDB.getInstance().getRowCount("inverted_premise_index_view") == 0 ||
+                ArgDB.getInstance().getRowCount("inverted_discussion_index_view") == 0) {
+            ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
+        }
     }
 
     /**
@@ -52,14 +55,15 @@ public class VectorSpace {
      * @param query query as String
      */
     private void loadQuery(final String query) {
-        queryVector = new Vector(vectorSize, -1);
+        queryVector = new Vector(vectorSize);
         nlpService.lemmatize(query).stream()
                 .map(token -> ArgDB.getInstance().getIndexOfTerm(token))
-                .forEach(id -> queryVector.set(id - 1, 0.5));   // Postgres starts indices with 1
+                .forEach(id -> queryVector.set(id - 1, 1));   // Postgres starts indices with 1
     }
 
-    public List<Document> query(final String query, final double minRank) {
-        loadQuery(query);
+    public List<Result> query(final Topic topic, final double minRank) {
+        logger.info("Start retrieving documents with query '{}'", topic.getTitle());
+        loadQuery(topic.getTitle());
 
         ResultSet rArg = ArgDB.getInstance().query(Query.argument);
         ResultSet rPrem = ArgDB.getInstance().query(Query.premise);
@@ -67,33 +71,43 @@ public class VectorSpace {
 
         ExecutorService executor = Executors.newCachedThreadPool();
 
-        List<Callable<List<Document>>> calls = new ArrayList<>();
-        calls.add(() -> processResult(rArg, minRank, Document.Type.ARGUMENT));
-        calls.add(() -> processResult(rPrem, minRank, Document.Type.PREMISE));
-        calls.add(() -> processResult(rDisc, minRank, Document.Type.DISCUSSION));
+        List<Callable<List<Result>>> calls = new ArrayList<>();
+        calls.add(() -> processResult(rArg, minRank, topic.getNumber(), Result.DocumentType.ARGUMENT));
+        calls.add(() -> processResult(rPrem, minRank, topic.getNumber(), Result.DocumentType.PREMISE));
+        calls.add(() -> processResult(rDisc, minRank, topic.getNumber(), Result.DocumentType.DISCUSSION));
 
-        List<Document> results = new ArrayList<>();
+        List<Result> results = new ArrayList<>();
         try {
             var futures = executor.invokeAll(calls);
-            for (Future<List<Document>> future : futures) {
+            for (Future<List<Result>> future : futures) {
                 results.addAll(future.get());
             }
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
+        } catch (ExecutionException e) {
+            // Ignore
         }
 
         executor.shutdown();
 
         Collections.sort(results);
 
+        int rank = 1;
+        for (Result result : results) {
+            result.setRank(rank++);
+        }
+
+
+        logger.info("Finished retrieving. Results: {}", results.size());
         return results;
     }
 
-    private List<Document> processResult(final ResultSet rs, final double minRank, final Document.Type type) {
-        List<Document> retrieved = new ArrayList<>();
+    private List<Result> processResult(final ResultSet rs, final double minRank, final int topicNumber,
+                                       final Result.DocumentType type) {
+        List<Result> retrieved = new ArrayList<>();
         try {
             while (rs.next()) {
-                final int docid = rs.getInt(1);
+                final String docid = rs.getString(1);
                 Array sTokenIds = rs.getArray(2);
                 Array sTokenWeights = rs.getArray(3);
 
@@ -107,7 +121,7 @@ public class VectorSpace {
                     continue;
                 }
 
-                final Vector docVector = new Vector(vectorSize, docid);
+                final Vector docVector = new Vector(vectorSize);
 
                 for (int i = 0; i < tokenIds.length; i++) {
                     final int id = tokenIds[i] - 1;
@@ -117,7 +131,7 @@ public class VectorSpace {
                 double sim = VectorMath.getCosineSimilarity(docVector, queryVector);
 
                 if (sim > minRank) {
-                    retrieved.add(new Document(docid, sim, type));
+                    retrieved.add(new Result(type, topicNumber, docid, 0, sim));
                 }
             }
         } catch (SQLException throwables) {
