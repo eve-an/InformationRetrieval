@@ -2,16 +2,15 @@ package argssearch;
 
 import argssearch.acquisition.Acquisition;
 import argssearch.indexing.index.Indexer;
-import argssearch.retrieval.models.vectorspace.Document;
 import argssearch.retrieval.models.vectorspace.VectorSpace;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
+import argssearch.shared.query.Result;
+import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -33,16 +32,6 @@ public class Main {
         }
 
         logger.info("Connected to DB.");
-
-        ResultSet rs = ArgDB.getInstance().query("SELECT version()");
-
-        try {
-            if (rs.next()) {
-                System.out.println(rs.getString(1));
-            }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
     }
 
     /**
@@ -63,6 +52,7 @@ public class Main {
      */
     static void index(final CoreNlpService nlpService) {
         Indexer.index(nlpService, TokenCachePool.getInstance().get(Integer.MAX_VALUE));
+        ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
     }
 
     /**
@@ -72,11 +62,11 @@ public class Main {
      * @param minRank    Documents with a rank which is smaller than minRank will not be returned
      * @param nlpService to get the lemmatized query
      */
-    static void queryVectorSpace(final String query, final double minRank, final CoreNlpService nlpService) {
+    static void queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService) {
         VectorSpace vs = new VectorSpace(nlpService);
-        List<Document> results = vs.query(query, minRank);
+        List<Result> results = vs.query(query, minRank);
 
-        for (Document result : results) {
+        for (Result result : results) {
             System.out.println(result);
         }
     }

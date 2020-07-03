@@ -90,8 +90,6 @@ public class ArgDB {
                 "aggregate_bootstrap.sql",
                 "functions_bootstrap.sql",
                 "procedure_bootstrap.sql",
-                "type_bootstrap.sql",
-                "vectorspace.sql",
                 "view_bootstrap.sql"
         ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 

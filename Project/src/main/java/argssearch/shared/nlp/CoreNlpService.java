@@ -1,9 +1,6 @@
 package argssearch.shared.nlp;
 
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.CoreDocument;
-import edu.stanford.nlp.pipeline.CoreEntityMention;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.simple.*;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -17,16 +14,12 @@ import java.util.stream.Collectors;
  */
 public class CoreNlpService {
 
-    private final StanfordCoreNLP pipeline;
     private final HashSet<String> stopWords;
     private static final Pattern pattern = Pattern.compile("[a-zA-Z]{2,}");
 
     public CoreNlpService() {
-        Properties properties = new Properties();
         // In case you dont need named entity recognition remove the ner property
         // It is the most expensive operation
-        properties.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner");
-        pipeline = new StanfordCoreNLP(properties);
         stopWords = new HashSet<>();
         initStopWords();
     }
@@ -55,38 +48,13 @@ public class CoreNlpService {
      * @return A List of lemmatized tokens.
      */
     public List<String> lemmatize(final String document) {
-        CoreDocument doc = new CoreDocument(document);
-        pipeline.annotate(doc);
+        Document doc = new Document(document);
 
-        return doc.tokens().stream()
-                .map(CoreLabel::lemma)
+        return doc.sentences().stream()
+                .flatMap(sentence -> sentence.lemmas().stream())
                 .filter(this::checkAgainstStopWords)
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-    }
+                .map(String::toLowerCase).collect(Collectors.toList());
 
-    /**
-     * Gets the named entity relations.
-     *
-     * @param document document as String
-     * @return A Map with tokens as keys and their ner as values.
-     */
-    public Map<String, String> namedEntities(final String document) {
-        CoreDocument doc = new CoreDocument(document);
-        pipeline.annotate(doc);
-
-        Map<String, String> namedEntities = new HashMap<>();
-        for (CoreEntityMention mention : doc.entityMentions()) {
-            String entity = mention.text();
-            String type = mention.entityType();
-
-            if (checkAgainstStopWords(type)) {
-                namedEntities.put(entity, type);
-            }
-        }
-
-
-        return namedEntities;
     }
 
     /**
