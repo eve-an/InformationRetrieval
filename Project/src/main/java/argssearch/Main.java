@@ -1,7 +1,10 @@
 package argssearch;
 
+import argssearch.indexing.index.Indexer;
 import argssearch.retrieval.models.ModelType;
+import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,12 @@ public class Main {
             ArgDB.getInstance().connectToDB();
         }
 
+        CoreNlpService s = new CoreNlpService();
+        //ArgDB.getInstance().dropSchema("public");
+        //ArgDB.getInstance().createSchema();
+        Indexer.index(s ,TokenCachePool.getInstance().get(Integer.MAX_VALUE));
+        /*
+
         logger.info("Connected to DB.");
 
         // Example Topic from Touche
@@ -40,5 +49,7 @@ public class Main {
         Pipeline pipeline = new Pipeline(example);
 
         pipeline.exec(ModelType.VECTOR_SPACE);  // Retrieve Documents
+
+       */
     }
 }
