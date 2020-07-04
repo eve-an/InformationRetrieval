@@ -17,14 +17,16 @@ public class TokenCache {
    * The store maps an unique identifier like domain or crawlID to the
    * internally used primary key value.
    * */
-  private ConcurrentCacheMap<String, Integer> store;
+  private CacheMap<String, Integer> store;
 
+  private ArgDB argDB;
   private PreparedStatement query;
   private PreparedStatement insert;
 
   TokenCache(final int cacheSize) {
-    this.query = ArgDB
-        .getInstance()
+    this.argDB = new ArgDB();
+    this.argDB.connectToDB();
+    this.query = argDB
         .prepareStatement(
             String.format(
                 "SELECT %s FROM %s WHERE %s = ?",
@@ -32,18 +34,17 @@ public class TokenCache {
                 TOKEN_TABLE_NAME,
                 TOKEN_IDENTIFIER_NAME)
         );
-    this.insert = ArgDB
-        .getInstance()
+    this.insert = argDB
         .prepareStatementWithReturnOfId(String.format(
             "INSERT INTO %s(%s) VALUES (?)",
             TOKEN_TABLE_NAME,
             TOKEN_IDENTIFIER_NAME
         ), TOKEN_PRIMARY_KEY);
 
-    this.store = new ConcurrentCacheMap<>(cacheSize);
+    this.store = new CacheMap<>(cacheSize);
   }
 
-  public int get(final String identifier) {
+  public synchronized int get(final String identifier) {
     // check if cached
     int lookup = this.store.getOrDefault(identifier, -1);
     // if not cached, look in db
@@ -89,22 +90,6 @@ public class TokenCache {
       }
     }
     return -1;
-  }
-
-  private static final class ConcurrentCacheMap<K, V>{
-    private CacheMap<K, V> map;
-
-    public ConcurrentCacheMap(final int cacheSize) {
-      this.map = new CacheMap<>(cacheSize);
-    }
-
-    public synchronized V getOrDefault(final K key, final V defaultValue) {
-      return this.map.getOrDefault(key, defaultValue);
-    }
-
-    public synchronized void put(final K key, final V value) {
-      this.map.putIfAbsent(key, value);
-    }
   }
 
   private static final class CacheMap<K, V> extends LinkedHashMap<K, V> {

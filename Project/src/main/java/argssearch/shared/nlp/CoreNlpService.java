@@ -2,6 +2,7 @@ package argssearch.shared.nlp;
 
 import edu.stanford.nlp.simple.*;
 
+import edu.stanford.nlp.util.RuntimeInterruptedException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 public class CoreNlpService {
 
     private final HashSet<String> stopWords;
-    private static final Pattern pattern = Pattern.compile("[a-zA-Z]{2,}");
+    private final Pattern pattern = Pattern.compile("[a-zA-Z]{2,}");
 
     public CoreNlpService() throws URISyntaxException {
         // In case you dont need named entity recognition remove the ner property
@@ -53,14 +54,17 @@ public class CoreNlpService {
      * @param document document as String
      * @return A List of lemmatized tokens.
      */
-    public List<String> lemmatize(final String document) {
+    public synchronized List<String> lemmatize(final String document) {
         Document doc = new Document(document);
-
-        return doc.sentences().stream()
+        try {
+            return doc.sentences().stream()
                 .flatMap(sentence -> sentence.lemmas().stream())
                 .filter(this::checkAgainstStopWords)
                 .map(String::toLowerCase).collect(Collectors.toList());
-
+        } catch (RuntimeInterruptedException rie) {
+            rie.printStackTrace();
+        }
+        return List.of();
     }
 
     /**

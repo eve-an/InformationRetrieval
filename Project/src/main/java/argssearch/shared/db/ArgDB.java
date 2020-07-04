@@ -13,11 +13,9 @@ public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
     private Connection conn;
-    private static String USERNAME = "irargdb";
-    private static String PASSWORD = "";
-    private static String DB_NAME = "argdb";
-    // Append &password=your_password when you have a password for your db
-    public static String DB_URL = String.format("jdbc:postgresql://localhost:5432/%s?user=%s", DB_NAME, USERNAME);
+    private final String USERNAME = "irargdb";
+    private final String DB_NAME = "argdb";
+    private final String DB_URL = String.format("jdbc:postgresql://localhost:5432/%s?user=%s", DB_NAME, USERNAME);
 
 
     public void connectToDB(final String url) {
@@ -88,7 +86,8 @@ public class ArgDB {
                 "index_bootstrap.sql",
                 "aggregate_bootstrap.sql",
                 "functions_bootstrap.sql",
-                "procedure_bootstrap.sql",
+                "type_bootstrap.sql",                                                                                             
+                "vectorspace.sql",
                 "view_bootstrap.sql"
         ).forEachOrdered(file -> executeSqlFile("/database/" + file));
 
