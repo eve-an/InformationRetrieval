@@ -22,6 +22,7 @@ class TextProcessor extends Thread{
     private int maxBatchSize;
     private PreparedStatement ps;
 
+    private ArgDB argDB;
     private BlockingQueue<Collection<TextTask>> gatheredTaskQueue;
     private boolean okay;
     private int batchSize = 0;
@@ -34,8 +35,10 @@ class TextProcessor extends Thread{
         this.maxBatchSize = insertBatchSize;
         this.gatheredTaskQueue = gatheredTasks;
         this.logger = LoggerFactory.getLogger(String.format("TextProcessor[%s]", indexTable.getTableName()));
+        this.argDB = new ArgDB();
+        this.argDB.connectToDB();
 
-        ps = ArgDB.getInstance().prepareStatement(String.format(
+        ps = argDB.prepareStatement(String.format(
             "INSERT INTO %s (tID, %s, occurrences, offsets) VALUES (?,?,?,?)",
             indexTable.getTableName(),
             indexTable.getRefId()

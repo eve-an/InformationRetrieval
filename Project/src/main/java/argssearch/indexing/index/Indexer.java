@@ -30,10 +30,10 @@ public class Indexer extends Thread{
       Indexer aI = new Indexer(new ArgumentIndexTable(), new ArgumentTable(), cache, service, 4000,  4000);
       Indexer dI = new Indexer(new DiscussionIndexTable(), new DiscussionTable(), cache, service, 4000,  4000);
       dI.start();
-      dI.join();
       pI.start();
-      pI.join();
       aI.start();
+      dI.join();
+      pI.join();
       aI.join();
     } catch (InterruptedException e) {
       e.printStackTrace();
@@ -43,6 +43,7 @@ public class Indexer extends Thread{
   private final AbstractTextTable textTable;
   private final int queryBatchSize;
 
+  private ArgDB argDB;
   private final int maxId;
   private final TextProcessor processor;
   private boolean okay;
@@ -59,9 +60,11 @@ public class Indexer extends Thread{
     this.textTable = textTable;
     this.queryBatchSize = queryBatchSize;
     this.logger = LoggerFactory.getLogger(String.format("Indexer[%s]", textTable.getTableName()));
+    this.argDB = new ArgDB();
+    this.argDB.connectToDB();
 
     // Clear the table before indexing
-    ArgDB.getInstance().clearTable(indexTable.getTableName());
+    argDB.clearTable(indexTable.getTableName());
 
     // NOTE: the queue holds at most batchSize * 3 total items
     this.taskBatchQueue = new LinkedBlockingQueue<>(3);
@@ -137,7 +140,7 @@ public class Indexer extends Thread{
     );
 
     try {
-      ResultSet rs = ArgDB.getInstance().getStatement().executeQuery(query);
+      ResultSet rs = argDB.getStatement().executeQuery(query);
       if (rs.next()) {
         return rs.getInt(1);
       }
@@ -150,7 +153,7 @@ public class Indexer extends Thread{
   }
 
   private ResultSet query(int from, int to) throws SQLException {
-    return ArgDB.getInstance().getStatement().executeQuery(String.format(
+    return argDB.getStatement().executeQuery(String.format(
         "SELECT %s, %s FROM %s WHERE %s BETWEEN %d AND %d",
         this.textTable.getPrimaryKeyAttributeName(),
         this.textTable.getTextAttributeName(),
