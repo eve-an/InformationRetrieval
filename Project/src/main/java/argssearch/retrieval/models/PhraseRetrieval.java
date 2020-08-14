@@ -4,11 +4,11 @@ import argssearch.shared.cache.TokenCache;
 import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class PhraseRetrieval {
@@ -18,13 +18,61 @@ public class PhraseRetrieval {
   private final CoreNlpService nlpService;
 
   public PhraseRetrieval(CoreNlpService nlpService, TokenCache cache, AbstractIndexTable table) {
+    final String prequery ;
+    final String postquery ;
+    switch(table.getTableName().toLowerCase()){
+      case "argument_index":
+        prequery =
+                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight,argument.argid) AS rank, weight AS score " +
+                        "FROM argument INNER JOIN " +
+                        "( ";
+        postquery =
+                ") " +
+                        "AS t_argument_index " +
+                        "ON t_argument_index.refid = argument.argid " +
+                        "ORDER BY rank ASC, score DESC, crawlID DESC;";
+        break;
+      case "premise_index":
+        prequery =
+                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight,argument.argid) AS rank, weight AS score " +
+                        "FROM argument INNER JOIN " +
+                        "( ";
+        postquery =
+                ") " +
+                        "AS t_premise_index " +
+                        "ON t_premise_index.refid = argument.pid " +
+                        "ORDER BY rank ASC, score DESC, crawlID DESC; ";
+        break;
+      case "discussion_index":
+        prequery =
+                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight,argument.argid) AS rank, weight AS score " +
+                        "FROM argument INNER JOIN " +
+                        "( " +
+                        "   SELECT pid, weight " +
+                        "   FROM premise INNER JOIN " +
+                        "   (";
+        postquery =
+                "   ) " +
+                        "   AS t_discussion_index " +
+                        "   ON t_discussion_index.refid = premise.did " +
+                        ") " +
+                        "AS t_premise " +
+                        "ON t_premise.pid = argument.pid " +
+                        "ORDER BY rank ASC, score DESC, crawlID DESC; ";
+        break;
+      default:
+        prequery = "";
+        postquery = ";";
+        System.out.println("No matching tablename");
+        break;
+    }
     this.query = ArgDB.getInstance().prepareStatement(String.format(
-      "SELECT %s, phraseCount(?::INT[], array_agg(%s), array_agg(%s), array_cat_agg(%s)) as phraseMatches, SUM(%s) * ? AS weightSum " +
+      "%s SELECT %s AS refid, phraseCount(?::INT[], array_agg(%s), array_agg(%s), array_cat_agg(%s)) as phraseMatches, SUM(%s) * ? AS weight " +
       "FROM %s " +
       "WHERE %s >= ? AND %s = ANY(?::INT[]) " +
       "GROUP BY %s " +
-      "HAVING COUNT(%s) = ? AND phraseCount(?::INT[], array_agg(%s), array_agg(%s), array_cat_agg(%s)) > 0 " +
-      "ORDER BY phraseMatches DESC, weightSum DESC",
+      "HAVING COUNT(%s) = ? AND phraseCount(?::INT[], array_agg(%s), array_agg(%s), array_cat_agg(%s)) > 0 %s",
+      prequery,
       table.getRefId(),
       table.getTokenID(),
       table.getOccurrences(),
@@ -37,14 +85,15 @@ public class PhraseRetrieval {
       table.getTokenID(),
       table.getTokenID(),
       table.getOccurrences(),
-      table.getOffsets()
+      table.getOffsets(),
+      postquery
     ));
 
     this.nlpService = nlpService;
     this.cache = cache;
   }
 
-  public void execute(final String text, final int tokenMinWeight, final int weightMultiplier, final BiConsumer<Integer, Integer> argumentProcessor) {
+  public void execute(final String text, final int tokenMinWeight, final int weightMultiplier) {
     List<Integer> preprocessedText = nlpService.lemmatize(text).stream().map(this.cache::get).collect(Collectors.toList());
     if (preprocessedText.size() == 0) {
       return;
@@ -67,14 +116,16 @@ public class PhraseRetrieval {
       query.setString(6, tokenOrder);
 
       ResultSet resultSet = this.query.executeQuery();
+      //System.out.println("output: ");
       while (resultSet.next()) {
-        argumentProcessor.accept(resultSet.getInt(1), resultSet.getInt(2));
+        //System.out.println(resultSet.getString(1) + " " + resultSet.getInt(2)+ " " + resultSet.getDouble(3));
+        //todo triConsumer
       }
       resultSet.close();
     } catch (SQLException sqlE) {
-      if (ArgDB.isException(sqlE)) {
-        sqlE.printStackTrace();
-      }
+      //System.out.println("exep");
+      System.out.println(sqlE.getMessage());
+      sqlE.printStackTrace();
     }
   }
 }

@@ -51,13 +51,17 @@ BEGIN
     --INSERT INTO source(domain) VALUES ('wikipedia.org') RETURNING sourceID INTO wikipediaOrgSourceId;
     --INSERT INTO source(domain) VALUES ('discussion.de') RETURNING sourceID INTO discussionDeSourceId;
 
-    INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (debateOrgSourceId, 'dis1', 'Discussion test', 'debate.org/discussion1') RETURNING dID INTO discussion1Id;
+    INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (debateOrgSourceId, 'dis1', 'Gandalf', 'debate.org/discussion1') RETURNING dID INTO discussion1Id;
+    INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (debateOrgSourceId, 'dis2', 'Sauron', 'debate.org/discussion1') RETURNING dID INTO discussion2Id;
+
     --INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (debateOrgSourceId, 'dis2', 'Discussion istzz', 'debate.org/discussion2') RETURNING dID INTO discussion2Id;
     --INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (wikipediaOrgSourceId, 'dis3', 'Discussion freedom', 'wikipedia.org/discussion3') RETURNING dID INTO discussion3Id;
     --INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (wikipediaOrgSourceId, 'dis4', 'Discussion cossur', 'wikipedia.org/discussion4') RETURNING dID INTO discussion4Id;
     --INSERT INTO discussion(sourceID, crawlID, title, url) VALUES (discussionDeSourceId, 'dis5', 'Discussion hello', 'discussion.de/discussion5') RETURNING dID INTO discussion5Id;
 
-    INSERT INTO premise(dID, crawlID, title) VALUES (discussion1Id, 'prem1', 'this is one premise') RETURNING pID INTO premise1Id;
+    INSERT INTO premise(dID, crawlID, title) VALUES (discussion1Id, 'prem1', 'Affe') RETURNING pID INTO premise1Id;
+    INSERT INTO premise(dID, crawlID, title) VALUES (discussion1Id, 'prem2', 'Eichhörnchen') RETURNING pID INTO premise2Id;
+    INSERT INTO premise(dID, crawlID, title) VALUES (discussion2Id, 'prem3', 'Eichhörnchen') RETURNING pID INTO premise3Id;
     --INSERT INTO premise(dID, crawlID, title) VALUES (discussion1Id, 'prem2', 'this is another premise') RETURNING pID INTO premise2Id;
     --INSERT INTO premise(dID, crawlID, title) VALUES (discussion2Id, 'prem3', 'premises are boring') RETURNING pID INTO premise3Id;
     --INSERT INTO premise(dID, crawlID, title) VALUES (discussion2Id, 'prem4', 'who cares about premises') RETURNING pID INTO premise4Id;
@@ -76,8 +80,8 @@ BEGIN
     INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA6', 'fighter germany fighter fighter', 4, FALSE) RETURNING argID INTO argument6Id;
     INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA7', 'fighter germany fighter fighter germany fighter', 4, FALSE) RETURNING argID INTO argument7Id;
     INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA8', 'fighter germany fighter windows fighter germany fighter', 4, FALSE) RETURNING argID INTO argument8Id;
-    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA9', 'fighter germany fighter windows fighter germany fighter fighter', 4, FALSE) RETURNING argID INTO argument9Id;
-    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise1Id, 'crawlA10', 'fighter', 4, FALSE) RETURNING argID INTO argument10Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise3Id, 'crawlA9', 'fighter germany fighter windows fighter germany fighter fighter', 4, FALSE) RETURNING argID INTO argument9Id;
+    INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise2Id, 'crawlA10', 'fighter', 4, FALSE) RETURNING argID INTO argument10Id;
     
     --INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise3Id, 'crawlA3', 'arguments are nothing but interesting', 30, TRUE) RETURNING argID INTO argument3Id;
     --INSERT INTO argument(pID, crawlID, content, totalTokens, isPro) VALUES (premise4Id, 'crawlA4', 'arguments are nothing but false', 40, FALSE) RETURNING argID INTO argument4Id;

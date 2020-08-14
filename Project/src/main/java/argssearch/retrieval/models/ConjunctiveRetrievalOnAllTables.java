@@ -18,13 +18,13 @@ public class ConjunctiveRetrievalOnAllTables {
 
     public ConjunctiveRetrievalOnAllTables(CoreNlpService nlpService, TokenCache cache) {
         this.query = ArgDB.getInstance().prepareStatement(
-                "SELECT content, ispro, argID, pID, dID, SUM(sumW) as sum, SUM(tid_matches) as tid_count, SUM(occurrence_count) as occ_count, COUNT(*) as count " +
+                "SELECT end_t.crawlID AS doc, DENSE_RANK() over (ORDER BY SUM(sumW),argid) AS rank, SUM(sumW) as score " +
                         "FROM " +
                         "( " +
-                        "    SELECT content, ispro, argID, t_arg.pID, dID, sumW, tid_matches, occurrence_count " +
+                        "    SELECT t_arg.crawlID, content, ispro, argID, t_arg.pID, dID, sumW, tid_matches, occurrence_count " +
                         "    FROM premise INNER JOIN " +
                         "    ( " +
-                        "        SELECT content, ispro, argument.argID, argument.pID, sumW, tid_matches, occurrence_count " +
+                        "        SELECT argument.crawlID, content, ispro, argument.argID, argument.pID, sumW, tid_matches, occurrence_count " +
                         "        FROM argument INNER JOIN " +
                         "        ( " +
                         "            SELECT argument_Index.argID, SUM(weight) * ? AS sumW, COUNT(tID) AS tid_matches, SUM(occurrences) AS occurrence_count " +
@@ -40,7 +40,7 @@ public class ConjunctiveRetrievalOnAllTables {
                         "    AS t_arg " +
                         "    ON t_arg.pID = premise.pID " +
                         "UNION ALL " +
-                        "    SELECT content, ispro, argID, t_premise.pID, dID, sumW, tid_matches, occurrence_count " +
+                        "    SELECT argument.crawlID, content, ispro, argID, t_premise.pID, dID, sumW, tid_matches, occurrence_count " +
                         "    FROM argument INNER JOIN " +
                         "    ( " +
                         "        SELECT premise.pID, dID, sumW, tid_matches, occurrence_count " +
@@ -59,7 +59,7 @@ public class ConjunctiveRetrievalOnAllTables {
                         "    AS t_premise " +
                         "    ON t_premise.pID = argument.pID " +
                         "UNION ALL " +
-                        "    SELECT content, ispro, argID, t_premise.pID, dID, sumW, tid_matches, occurrence_count " +
+                        "    SELECT argument.crawlID, content, ispro, argID, t_premise.pID, dID, sumW, tid_matches, occurrence_count " +
                         "    FROM argument INNER JOIN " +
                         "    ( " +
                         "        SELECT pID, t_discussion.dID, sumW, tid_matches, occurrence_count " +
@@ -85,8 +85,8 @@ public class ConjunctiveRetrievalOnAllTables {
                         "    ON t_premise.pID = argument.pID " +
                         ") " +
                         "AS end_t " +
-                        "Group by end_t.content, end_t.pid, end_t.did, end_t.argID, end_t.ispro " +
-                        "ORDER BY sum desc, occ_count DESC, tid_count DESC " +
+                        "Group by end_t.crawlID, end_t.argid " +
+                        "ORDER BY rank ASC, score DESC, crawlID DESC " +
                         "LIMIT ?; "
         );
         this.nlpService = nlpService;
@@ -124,16 +124,16 @@ public class ConjunctiveRetrievalOnAllTables {
             this.query.setInt(13, limitFinal);
 
             ResultSet resultSet = this.query.executeQuery();
+            //System.out.println("output: ");
             while (resultSet.next()) {
-                //todo Output
-
-                // System.out.println(resultSet.getString(1)+" | "+resultSet.getBoolean(2)+" | "+resultSet.getInt(3)+" | "+resultSet.getInt(4)+" | "+resultSet.getInt(5)+" | "+resultSet.getInt(6)+" | "+resultSet.getInt(8)+" | "+resultSet.getInt(9));
+                //System.out.println(resultSet.getString(1) + " " + resultSet.getInt(2)+ " " + resultSet.getDouble(3));
+                //todo Triconsumer
             }
             resultSet.close();
         } catch (SQLException sqlE) {
-            if (ArgDB.isException(sqlE)) {
-                sqlE.printStackTrace();;
-            }
+            //System.out.println("exep");
+            System.out.println(sqlE.getMessage());
+            sqlE.printStackTrace();
         }
     }
 }

@@ -18,13 +18,13 @@ public class PhraseRetrievalOnAllTables {
 
     public PhraseRetrievalOnAllTables(CoreNlpService nlpService, TokenCache cache) {
         this.query = ArgDB.getInstance().prepareStatement(
-                "SELECT content, ispro, argID, pID, dID, SUM(phraseMatches) as phraseCount, SUM(weightSum) as sum, COUNT(*) as count " +
+                "SELECT end_t.crawlID AS doc, DENSE_RANK() over (ORDER BY SUM(weightSum),argid) AS rank, SUM(weightSum) as score " +
                         "FROM " +
                         "( " +
-                        "    SELECT content, ispro, argID, t_arg.pID, dID, phraseMatches, weightSum " +
+                        "    SELECT t_arg.crawlID, content, ispro, argID, t_arg.pID, dID, phraseMatches, weightSum " +
                         "    FROM premise INNER JOIN " +
                         "    ( " +
-                        "        SELECT content, ispro, argument.argID, argument.pID, phraseMatches, weightSum " +
+                        "        SELECT argument.crawlID, content, ispro, argument.argID, argument.pID, phraseMatches, weightSum " +
                         "        FROM argument INNER JOIN " +
                         "        ( " +
                         "            SELECT argument_Index.argID, phraseCount(?::INT[], array_agg(tID), array_agg(occurrences), array_cat_agg(offsets)) as phraseMatches, SUM(weight) * ? AS weightSum " +
@@ -41,7 +41,7 @@ public class PhraseRetrievalOnAllTables {
                         "    AS t_arg " +
                         "    ON t_arg.pID = premise.pID " +
                         "UNION ALL " +
-                        "    SELECT content, ispro, argID, t_premise.pID, dID, phraseMatches, weightSum " +
+                        "    SELECT argument.crawlID, content, ispro, argID, t_premise.pID, dID, phraseMatches, weightSum " +
                         "    FROM argument INNER JOIN " +
                         "    ( " +
                         "        SELECT premise.pID, dID, phraseMatches, weightSum " +
@@ -61,7 +61,7 @@ public class PhraseRetrievalOnAllTables {
                         "    AS t_premise " +
                         "    ON t_premise.pID = argument.pID " +
                         "UNION ALL " +
-                        "    SELECT content, ispro, argID, t_premise.pID, dID, phraseMatches, weightSum " +
+                        "    SELECT argument.crawlID, content, ispro, argID, t_premise.pID, dID, phraseMatches, weightSum " +
                         "    FROM argument INNER JOIN " +
                         "    ( " +
                         "        SELECT pID, t_discussion.dID, phraseMatches, weightSum " +
@@ -88,8 +88,8 @@ public class PhraseRetrievalOnAllTables {
                         "    ON t_premise.pID = argument.pID " +
                         ") " +
                         "AS end_t " +
-                        "Group by end_t.content, end_t.pid, end_t.did, end_t.argID, end_t.ispro " +
-                        "ORDER BY phraseCount desc, sum desc " +
+                        "Group by end_t.crawlID, end_t.argid " +
+                        "ORDER BY rank ASC, score DESC, crawlID DESC " +
                         "LIMIT ?; "
         );
         this.nlpService = nlpService;
@@ -152,14 +152,15 @@ public class PhraseRetrievalOnAllTables {
 
             ResultSet resultSet = this.query.executeQuery();
             int i = 0;
-
+            //System.out.println("output: ");
             while (resultSet.next()) {
-                //todo Output
-
-                //System.out.println(resultSet.getString(1)+" | "+resultSet.getBoolean(2)+" | "+resultSet.getInt(3)+" | "+resultSet.getInt(4)+" | "+resultSet.getInt(5)+" | "+resultSet.getInt(6)+" | "+resultSet.getInt(8));
+                //System.out.println(resultSet.getString(1) + " " + resultSet.getInt(2)+ " " + resultSet.getDouble(3));
+                //todo triConsumer
             }
             resultSet.close();
         } catch (SQLException sqlE) {
+            //System.out.println("exep");
+            System.out.println(sqlE.getMessage());
             sqlE.printStackTrace();
         }
     }
