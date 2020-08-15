@@ -13,6 +13,7 @@ import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -30,7 +31,7 @@ public class Pipeline {
      * @param topic         Query
      * @param pathToJsonDir path
      */
-    public Pipeline(final Topic topic, final String pathToJsonDir) {
+    public Pipeline(final Topic topic, final String pathToJsonDir) throws URISyntaxException {
         this.topic = topic;
         nlpService = new CoreNlpService();
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
@@ -41,7 +42,7 @@ public class Pipeline {
      *
      * @param topic Query
      */
-    public Pipeline(Topic topic) {
+    public Pipeline(Topic topic) throws URISyntaxException {
         this.topic = topic;
         nlpService = new CoreNlpService();
     }

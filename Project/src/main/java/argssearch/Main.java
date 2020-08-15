@@ -1,16 +1,12 @@
 package argssearch;
 
 
-import argssearch.retrieval.models.*;
-import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
-import argssearch.shared.db.ArgumentIndexTable;
-import argssearch.shared.db.DiscussionIndexTable;
-import argssearch.shared.db.PremiseIndexTable;
 import argssearch.shared.nlp.CoreNlpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 
 
 public class Main {
@@ -22,13 +18,13 @@ public class Main {
         Second Arg = Query Input path
         Third Arg = Query Output path
     */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws URISyntaxException {
         if (args.length == 1) {
             ArgDB.getInstance().connectToDB(args[0]);
         } else {
             ArgDB.getInstance().connectToDB();
         }
-        CoreNlpService c = new CoreNlpService();
+
         logger.info("Starting ArgsSearch...");
         //Indexer.index(c,TokenCachePool.getInstance().getDefault());
         //TFIDFWeighter.weigh();
@@ -95,19 +91,19 @@ public class Main {
 
 
  */
-        ConjunctiveRetrievalOnAllTables a = new ConjunctiveRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());;
-        a.execute("fighter", 0,0,0,1,1,1,10,10,10,10);
-        a.execute("freedom", 0,0,0,1,1,1,10,10,10,10);
-
-
-
-        DisjunctiveRetrievalOnAllTables b = new DisjunctiveRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());
-        b.execute("Eichhornchen", 0,0,0,1,1,1,10,10,10,10);
-        b.execute("Affe", 0,0,0,1,1,1,10,10,10,10);
-
-
-        PhraseRetrievalOnAllTables d = new PhraseRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());
-        d.execute("Gandalf", 0,0,0,1,1,1,10,10,10,10);
-        d.execute("Sauron", 0,0,0,1,1,1,10,10,10,10);
+//        ConjunctiveRetrievalOnAllTables a = new ConjunctiveRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());;
+//        a.execute("fighter", 0,0,0,1,1,1,10,10,10,10);
+//        a.execute("freedom", 0,0,0,1,1,1,10,10,10,10);
+//
+//
+//
+//        DisjunctiveRetrievalOnAllTables b = new DisjunctiveRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());
+//        b.execute("Eichhornchen", 0,0,0,1,1,1,10,10,10,10);
+//        b.execute("Affe", 0,0,0,1,1,1,10,10,10,10);
+//
+//
+//        PhraseRetrievalOnAllTables d = new PhraseRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());
+//        d.execute("Gandalf", 0,0,0,1,1,1,10,10,10,10);
+//        d.execute("Sauron", 0,0,0,1,1,1,10,10,10,10);
     }
 }
