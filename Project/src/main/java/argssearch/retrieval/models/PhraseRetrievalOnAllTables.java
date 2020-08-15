@@ -2,6 +2,7 @@ package argssearch.retrieval.models;
 
 import argssearch.shared.cache.TokenCache;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.interfaces.TriConsumer;
 import argssearch.shared.nlp.CoreNlpService;
 
 import java.sql.PreparedStatement;
@@ -107,6 +108,7 @@ public class PhraseRetrievalOnAllTables {
             , final int limitPremise
             , final int limitArgument
             , final int limitFinal
+            , TriConsumer<String,Integer,Double> triConsumer
     )
     {   List<Integer> preprocessedText = nlpService.lemmatize(text).stream().map(this.cache::get).collect(Collectors.toList());
         if (preprocessedText.size() == 0) {
@@ -154,8 +156,7 @@ public class PhraseRetrievalOnAllTables {
             int i = 0;
             //System.out.println("output: ");
             while (resultSet.next()) {
-                //System.out.println(resultSet.getString(1) + " " + resultSet.getInt(2)+ " " + resultSet.getDouble(3));
-                //todo triConsumer
+                triConsumer.accept(resultSet.getString(1),resultSet.getInt(2),resultSet.getDouble(3));
             }
             resultSet.close();
         } catch (SQLException sqlE) {

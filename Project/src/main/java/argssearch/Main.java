@@ -1,20 +1,14 @@
+
 package argssearch;
 
-
-import argssearch.retrieval.models.*;
-import argssearch.shared.cache.TokenCachePool;
+import argssearch.retrieval.models.ModelType;
 import argssearch.shared.db.ArgDB;
-import argssearch.shared.db.ArgumentIndexTable;
-import argssearch.shared.db.DiscussionIndexTable;
-import argssearch.shared.db.PremiseIndexTable;
-import argssearch.shared.nlp.CoreNlpService;
+import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-
 public class Main {
-
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     /* TODO: Extract args; Idea:
@@ -23,91 +17,29 @@ public class Main {
         Third Arg = Query Output path
     */
     public static void main(String[] args) {
+        logger.info("Starting ArgsSearch...");
+
         if (args.length == 1) {
             ArgDB.getInstance().connectToDB(args[0]);
         } else {
             ArgDB.getInstance().connectToDB();
         }
-        CoreNlpService c = new CoreNlpService();
-        logger.info("Starting ArgsSearch...");
-        //Indexer.index(c,TokenCachePool.getInstance().getDefault());
-        //TFIDFWeighter.weigh();
-        /*
-        ConjunctiveRetrieval a = new ConjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new ArgumentIndexTable());;
-        a.execute("fighter", 0,1);
-        a.execute("freedom", 0,1);
 
+        logger.info("Connected to DB.");
 
-         */
-        //ConjunctiveRetrieval b = new ConjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-         //       new PremiseIndexTable());;
-        //b.execute("Eichhornchen", 0,1);
-        //b.execute("Affe", 0,1);
-/*
+        // Example Topic from Touche
+        // https://events.webis.de/touche-20/shared-task-1.html#submission
+        String exampleTitle = "Is climate change real?";
+        String exampleDescription = "You read an opinion piece on how climate change is a hoax and disagree. " +
+                "Now you are looking for arguments supporting the claim that climate change is in fact real.";
+        String exampleNarrative = "Relevant arguments will support the given stance that climate change is real " +
+                "or attack a hoax side's argument.";
 
-        ConjunctiveRetrieval d = new ConjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new DiscussionIndexTable());
-        //d.execute("Gandalf", 0,1);
-        d.execute("Sauron", 0,1);
+        Topic example = new Topic(1, exampleTitle, exampleDescription, exampleNarrative);
 
+        //Pipeline pipeline = new Pipeline(example, "/path/to/json_directory");
+        Pipeline pipeline = new Pipeline(example);
 
- */
-/*
-        DisjunctiveRetrieval a = new DisjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new ArgumentIndexTable());;
-        a.execute("fighter", 0,1);
-        a.execute("freedom", 0,1);
-
-
-
-        DisjunctiveRetrieval b = new DisjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-               new PremiseIndexTable());;
-        b.execute("Eichhornchen", 0,1);
-        b.execute("Affe", 0,1);
-
-
-        DisjunctiveRetrieval d = new DisjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new DiscussionIndexTable());
-        d.execute("Gandalf", 0,1);
-        d.execute("Sauron", 0,1);
-
-
- */
-/*
-        PhraseRetrieval a = new PhraseRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new ArgumentIndexTable());;
-        a.execute("fighter", 0,1);
-        a.execute("freedom", 0,1);
-
-
-
-        PhraseRetrieval b = new PhraseRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new PremiseIndexTable());;
-        b.execute("Eichhornchen", 0,1);
-        b.execute("Affe", 0,1);
-
-
-        PhraseRetrieval d = new PhraseRetrieval(c, TokenCachePool.getInstance().getDefault(),
-                new DiscussionIndexTable());
-        d.execute("Gandalf", 0,1);
-        d.execute("Sauron", 0,1);
-
-
- */
-        ConjunctiveRetrievalOnAllTables a = new ConjunctiveRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());;
-        a.execute("fighter", 0,0,0,1,1,1,10,10,10,10);
-        a.execute("freedom", 0,0,0,1,1,1,10,10,10,10);
-
-
-
-        DisjunctiveRetrievalOnAllTables b = new DisjunctiveRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());
-        b.execute("Eichhornchen", 0,0,0,1,1,1,10,10,10,10);
-        b.execute("Affe", 0,0,0,1,1,1,10,10,10,10);
-
-
-        PhraseRetrievalOnAllTables d = new PhraseRetrievalOnAllTables(c, TokenCachePool.getInstance().getDefault());
-        d.execute("Gandalf", 0,0,0,1,1,1,10,10,10,10);
-        d.execute("Sauron", 0,0,0,1,1,1,10,10,10,10);
+        pipeline.exec(ModelType.VECTOR_SPACE);  // Retrieve Documents
     }
 }
