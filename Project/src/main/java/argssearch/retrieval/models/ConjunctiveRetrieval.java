@@ -3,6 +3,7 @@ package argssearch.retrieval.models;
 import argssearch.shared.cache.TokenCache;
 import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.interfaces.TriConsumer;
 import argssearch.shared.nlp.CoreNlpService;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -86,7 +87,7 @@ public class ConjunctiveRetrieval {
     this.cache = cache;
   }
 
-  public void execute(final String text, final int tokenMinWeight, final int weightMultiplier) {
+  public void execute(final String text, final int tokenMinWeight, final int weightMultiplier, TriConsumer<String,Integer,Double> triConsumer) {
     List<String> preprocessedText = nlpService.lemmatize(text);
     String tokenArray = preprocessedText.stream()
         .distinct()
@@ -103,8 +104,7 @@ public class ConjunctiveRetrieval {
         ResultSet resultSet = this.query.executeQuery();
         //System.out.println("output: ");
         while (resultSet.next()) {
-            //System.out.println(resultSet.getString(1) + " " + resultSet.getInt(2)+ " " + resultSet.getDouble(3));
-            //todo triConsumer
+            triConsumer.accept(resultSet.getString(1),resultSet.getInt(2),resultSet.getDouble(3));
         }
         resultSet.close();
     } catch (SQLException sqlE) {

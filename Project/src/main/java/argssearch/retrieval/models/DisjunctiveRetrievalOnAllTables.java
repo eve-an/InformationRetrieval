@@ -2,6 +2,7 @@ package argssearch.retrieval.models;
 
 import argssearch.shared.cache.TokenCache;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.interfaces.TriConsumer;
 import argssearch.shared.nlp.CoreNlpService;
 
 import java.sql.PreparedStatement;
@@ -107,6 +108,7 @@ public class DisjunctiveRetrievalOnAllTables {
             , final int limitPremise
             , final int limitArgument
             , final int limitFinal
+            , TriConsumer<String,Integer,Double> triConsumer
     )
     { List<String> preprocessedText = nlpService.lemmatize(text);
         String tokenArray = preprocessedText.stream().map(this.cache::get).map(String::valueOf).collect(Collectors.joining(", ", "{", "}"));
@@ -132,8 +134,7 @@ public class DisjunctiveRetrievalOnAllTables {
             ResultSet resultSet = this.query.executeQuery();
             //System.out.println("output: ");
             while (resultSet.next()) {
-                //System.out.println(resultSet.getString(1) + " " + resultSet.getInt(2)+ " " + resultSet.getDouble(3));
-                //todo Triconsumer
+                triConsumer.accept(resultSet.getString(1),resultSet.getInt(2),resultSet.getDouble(3));
             }
             resultSet.close();
         } catch (SQLException sqlE) {
