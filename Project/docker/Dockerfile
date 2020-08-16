@@ -16,4 +16,4 @@ COPY --from=build "/usr/src/app/target/ArgsSearch-1.0-shaded.jar" /usr/src/app/a
 WORKDIR /usr/src/app/
 
 # On run execute the jar and hand over the database url as parameter
-CMD ["java", "-jar", "app.jar", "jdbc:postgresql://db:5432/argdb?user=irargdb&password=1234"]
+CMD ["java", "-jar", "app.jar"]
