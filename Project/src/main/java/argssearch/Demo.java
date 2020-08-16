@@ -7,6 +7,7 @@ import argssearch.shared.util.FileHandler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 
 public class Demo {
 
@@ -16,6 +17,11 @@ public class Demo {
         Files.write(path, new FileHandler().getResourceAsString("/demo/parliamentary.json").getBytes());
 
         Pipeline pipeline = new Pipeline(topic, path.toAbsolutePath().normalize().toString());
-        pipeline.exec(ModelType.VECTOR_SPACE);
+
+        try {
+            pipeline.exec(ModelType.VECTOR_SPACE);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
     }
 }

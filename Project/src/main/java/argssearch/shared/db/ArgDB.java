@@ -5,42 +5,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.sql.*;
+import java.util.List;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
-    private Connection conn;
-    private static final String USERNAME = "postgres";
-    private static final String DB_NAME = "argdb";
-    // Append &password=your_password when you have a password for your db
-    public static String DB_URL = String.format("jdbc:postgresql://localhost:5432/%s?user=%s", DB_NAME, USERNAME);
+    private final Connection conn;
+    private final Properties props;
 
-
-    public void connectToDB(final String url) {
+    // TODO make private
+    public ArgDB() {
         try {
             // Register Postgres Driver
             Class.forName("org.postgresql.Driver");
-            this.conn = DriverManager.getConnection(url);
-        } catch (SQLException | ClassNotFoundException e) {
-            throw new RuntimeException(e.getMessage());
+            props = loadProperties("/database/db_dev.properties");
+            this.conn = DriverManager.getConnection(props.getProperty("url"), props);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not read database properties.", e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Check if Postgres JDBC Driver is installed.", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not connect to database.", e);
         }
     }
 
-    public void connectToDB() {
-        try {
-            // Register Postgres Driver
-            Class.forName("org.postgresql.Driver");
-            this.conn = DriverManager.getConnection(DB_URL);
-        } catch (SQLException | ClassNotFoundException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+    private Properties loadProperties(final String relativePath) throws IOException {
+        Properties props = new Properties();
+        props.load(getClass().getResourceAsStream(relativePath));
+        return props;
     }
 
     public static ArgDB getInstance() {
@@ -79,7 +76,7 @@ public class ArgDB {
                 "functions_bootstrap.sql",
                 "procedure_bootstrap.sql",
                 "view_bootstrap.sql"
-        ).forEachOrdered(file -> executeSqlFile("/database/" + file));
+        ).forEachOrdered(file -> executeSqlFile("/database/scripts/" + file));
 
         logger.info("Created a new Schema.");
     }
@@ -112,35 +109,25 @@ public class ArgDB {
         return null;
     }
 
-    public void executeNativeSql(final String sql) throws SQLException {
+    public void executeNativeSql(final String sql) throws IOException {
+        List<String> cmds = List.of(
+                "psql", "-U", props.getProperty("db.user", "postgres"),
+                "-d", props.getProperty("db.password", ""),
+                "-c", sql
+        );
+        final ProcessBuilder pb = new ProcessBuilder(cmds);
+        Process p = pb.start();
 
-        final ProcessBuilder pb = new ProcessBuilder("psql", "-U", USERNAME, "-d", DB_NAME, "-c", sql);
-
-        try {
-            Process p = pb.start();
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            String output;
-            while ((output = br.readLine()) != null) {
-                logger.info(output);
-            }
-
-        } catch (IOException e) {
-            logger.error("Error while executing {}", sql, e);
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        String output;
+        while ((output = br.readLine()) != null) {
+            logger.info(output);
         }
+
     }
 
     public static boolean isException(SQLException sqle) {
         return false;
-    }
-
-    public ResultSet query(String queryText) {
-        try {
-            return this.conn.createStatement().executeQuery(queryText);
-        } catch (SQLException sqlE) {
-            // TODO log
-        }
-        return null;
     }
 
     public Array createArrayOf(String type, Object[] array) {
@@ -155,9 +142,7 @@ public class ArgDB {
     }
 
     public int getRowCount(String table) {
-        try {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + table);
+        try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM " + table)) {
             if (rs.next()) {
                 return rs.getInt(1);
             }
@@ -171,22 +156,27 @@ public class ArgDB {
     public void clearTable(final String tableName) {
         try {
             executeNativeSql(String.format("DELETE FROM %s", tableName));
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();   // TODO handle
         }
     }
 
     public int getIndexOfTerm(String term) throws SQLException {
-
-        PreparedStatement ps = ArgDB.getInstance().getConn().prepareStatement("SELECT tid FROM token WHERE token = ?");
-
+        PreparedStatement ps = prepareStatement("SELECT tid FROM token WHERE token = ?");
         ps.setString(1, term);
-        ResultSet rs = ps.executeQuery();
 
-        if (rs.next()) {
-            return rs.getInt(1);
-        } else throw new NoSQLResultException("Did not found an index for '" + term + "'");
-
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                int index = rs.getInt(1);
+                rs.close();
+                return index;
+            } else {
+                rs.close();
+                throw new NoSQLResultException("Did not found an index for '" + term + "'");
+            }
+        } finally {
+            ps.close();
+        }
     }
 
     public Statement getStatement() {
@@ -198,11 +188,9 @@ public class ArgDB {
     }
 
     public void executeStatement(final String statement) throws SQLException {
-        getConn().createStatement().execute(statement);
-    }
-
-    public Connection getConn() {
-        return conn;
+        Statement stmt = conn.createStatement();
+        stmt.execute(statement);
+        stmt.close();
     }
 
     private static class InstanceHolder {

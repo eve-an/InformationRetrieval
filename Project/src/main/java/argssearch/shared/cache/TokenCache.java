@@ -25,7 +25,6 @@ public class TokenCache {
 
   TokenCache(final int cacheSize) {
     this.argDB = new ArgDB();
-    this.argDB.connectToDB();
     this.query = argDB
         .prepareStatement(
             String.format(

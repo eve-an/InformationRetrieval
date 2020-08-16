@@ -2,6 +2,7 @@ package argssearch.shared.util;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,16 +33,11 @@ public class FileHandler {
     }
 
     public static boolean validateFile(final File file, boolean isDir) {
-        return file != null && file.exists() && isDir ? file.isDirectory() : file.isFile();
+        return file != null && file.exists() && isDir ? file.isDirectory() : Objects.requireNonNull(file).isFile();
     }
 
     public static boolean validateFile(final String fileString, boolean isDir) {
         File file = new File(fileString);
         return file.exists() && isDir ? file.isDirectory() : file.isFile();
-    }
-
-    public static void main(String[] args) throws IOException {
-        new FileHandler().getResourceAsStringStream("/stopwords.txt")
-                .forEach(System.out::println);
     }
 }

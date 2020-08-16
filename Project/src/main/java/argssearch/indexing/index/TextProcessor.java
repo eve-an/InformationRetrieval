@@ -4,6 +4,7 @@ import argssearch.shared.cache.TokenCache;
 import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,10 +13,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class TextProcessor extends Thread{
+class TextProcessor extends Thread {
 
     private TokenCache cache;
     private CoreNlpService nlpService;
@@ -36,12 +38,11 @@ class TextProcessor extends Thread{
         this.gatheredTaskQueue = gatheredTasks;
         this.logger = LoggerFactory.getLogger(String.format("TextProcessor[%s]", indexTable.getTableName()));
         this.argDB = new ArgDB();
-        this.argDB.connectToDB();
 
         ps = argDB.prepareStatement(String.format(
-            "INSERT INTO %s (tID, %s, occurrences, offsets) VALUES (?,?,?,?)",
-            indexTable.getTableName(),
-            indexTable.getRefId()
+                "INSERT INTO %s (tID, %s, occurrences, offsets) VALUES (?,?,?,?)",
+                indexTable.getTableName(),
+                indexTable.getRefId()
         ));
 
     }
@@ -65,15 +66,18 @@ class TextProcessor extends Thread{
             }
         }
 
-        // if there are items left to insert, insert them
-        if (batchSize > maxBatchSize) {
-            try {
-                ps.executeBatch();
-                batchSize = 0;
-                ps.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+        // TODO: Just let it execute the batch, when something goes wrong the exception will be caught
+        // An Robin: Problem war, dass ich die Parliamentary.json eingelesen habe, die nur 48 Diskussionen enthält
+        // Als maxBatchSize war aber irwas mit 40.000 eingestellt, somit wurde einfach gar nix gemacht
+        // Ich weiß nicht ob es schlimm ist wenn man batches oftmals ausführt (kann ja sein dass nachdem man den Batch
+        // einmal ausgeführt hat, die elemente darin gelöscht werden). Ansonsten wäre das in diesem Fall ja nicht schlimm,
+        // da man ja einfach die Exception fängt.
+        try {
+            ps.executeBatch();
+            batchSize = 0;
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         logger.info("Shutting down");
@@ -91,10 +95,10 @@ class TextProcessor extends Thread{
         logger.info("Interrupting");
     }
 
-    void process(final TextTask task){
+    void process(final TextTask task) {
         Map<String, List<Integer>> splittedString = getSplittedString(nlpService.lemmatize(task.getText()));
 
-        for(Map.Entry<String, List<Integer>> token : splittedString.entrySet()){
+        for (Map.Entry<String, List<Integer>> token : splittedString.entrySet()) {
 
             Integer tId = token.getValue().remove(0);
             List<Integer> offsets = token.getValue();
@@ -120,16 +124,17 @@ class TextProcessor extends Thread{
 
     /**
      * to get the tokens from the text together with the tokenid and the positions within the text
+     *
      * @param text the text as Array, every word is an entry
      * @return String ist the token, the first Integer is the tokenId followed by the indices where the token occurs
      * in the given String
      */
-    private Map<String, List<Integer>> getSplittedString(List<String> text){
+    private Map<String, List<Integer>> getSplittedString(List<String> text) {
         Map<String, List<Integer>> result = new HashMap<String, List<Integer>>();
-        for(int i = 0; i < text.size(); i++){
-            if(result.containsKey(text.get(i))){
+        for (int i = 0; i < text.size(); i++) {
+            if (result.containsKey(text.get(i))) {
                 result.get(text.get(i)).add(i);
-            }else{
+            } else {
                 ArrayList<Integer> l = new ArrayList<Integer>();
                 l.add(this.cache.get(text.get(i)));
                 l.add(i);

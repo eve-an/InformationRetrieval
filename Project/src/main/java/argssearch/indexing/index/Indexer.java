@@ -61,7 +61,6 @@ public class Indexer extends Thread{
     this.queryBatchSize = queryBatchSize;
     this.logger = LoggerFactory.getLogger(String.format("Indexer[%s]", textTable.getTableName()));
     this.argDB = new ArgDB();
-    this.argDB.connectToDB();
 
     // Clear the table before indexing
     argDB.clearTable(indexTable.getTableName());
@@ -75,9 +74,9 @@ public class Indexer extends Thread{
 
   @Override
   public synchronized void start() {
+    this.okay = true;
     super.start();
     this.processor.start();
-    this.okay = true;
   }
 
   @Override

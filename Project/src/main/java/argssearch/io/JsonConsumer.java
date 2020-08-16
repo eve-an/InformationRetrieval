@@ -49,7 +49,7 @@ class JsonConsumer implements Runnable {
 
             db.execBatch();
             logger.info("Copying temp data to original database.");
-            ArgDB.getInstance().executeSqlFile("/database/insertion/temp/temp_constraints.sql");
+            ArgDB.getInstance().executeSqlFile("/database/scripts/insertion/temp/temp_constraints.sql");
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e.getLocalizedMessage());

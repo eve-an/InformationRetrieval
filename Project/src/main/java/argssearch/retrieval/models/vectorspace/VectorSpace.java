@@ -8,9 +8,7 @@ import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Array;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -45,7 +43,7 @@ public class VectorSpace {
         if (ArgDB.getInstance().getRowCount("inverted_argument_index_view") == 0 ||
                 ArgDB.getInstance().getRowCount("inverted_premise_index_view") == 0 ||
                 ArgDB.getInstance().getRowCount("inverted_discussion_index_view") == 0) {
-            ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
+            ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
         }
     }
 
@@ -70,13 +68,17 @@ public class VectorSpace {
         }
     }
 
-    public List<Result> query(final Topic topic, final double minRank) {
+    public List<Result> query(final Topic topic, final double minRank) throws SQLException {
         logger.info("Start retrieving documents with query '{}'", topic.getTitle());
         loadQuery(topic.getTitle());
 
-        ResultSet rArg = ArgDB.getInstance().query(Query.argument);
-        ResultSet rPrem = ArgDB.getInstance().query(Query.premise);
-        ResultSet rDisc = ArgDB.getInstance().query(Query.discussion);
+        Statement aStmt = ArgDB.getInstance().getStatement();
+        Statement pStmt = ArgDB.getInstance().getStatement();
+        Statement dStmt = ArgDB.getInstance().getStatement();
+
+        ResultSet rArg = aStmt.executeQuery(Query.argument);
+        ResultSet rPrem = pStmt.executeQuery(Query.premise);
+        ResultSet rDisc = dStmt.executeQuery(Query.discussion);
 
         ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -98,6 +100,9 @@ public class VectorSpace {
         }
 
         executor.shutdown();
+        aStmt.close();
+        pStmt.close();
+        dStmt.close();
 
         Collections.sort(results);
 

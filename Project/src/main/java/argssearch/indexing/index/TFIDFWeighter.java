@@ -6,7 +6,7 @@ public class TFIDFWeighter {
 
   public static void weigh() {
       System.out.println("Start weighing");
-      ArgDB.getInstance().executeSqlFile("/database/weighter.sql");
+      ArgDB.getInstance().executeSqlFile("/database/scripts/weighter.sql");
       System.out.println("Finished weighing");
   }
 }

@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -48,7 +48,7 @@ public class Pipeline {
         nlpService = new CoreNlpService();
     }
 
-    public void exec(final ModelType model) {
+    public void exec(final ModelType model) throws SQLException {
         index(nlpService);      // Index all Documents
         TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
 
@@ -63,7 +63,7 @@ public class Pipeline {
             case BOOL_DISJUNCTIVE:
                 break;
             case VECTOR_SPACE:
-                ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
+                ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
                 results = queryVectorSpace(topic, 0.1, nlpService);
             default:
                 break;
@@ -110,7 +110,7 @@ public class Pipeline {
      * @param minRank    Documents with a rank which is smaller than minRank will not be returned
      * @param nlpService to get the lemmatized query
      */
-    private List<Result> queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService) {
+    private List<Result> queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService) throws SQLException {
         VectorSpace vs = new VectorSpace(nlpService);
         return vs.query(query, minRank);
     }

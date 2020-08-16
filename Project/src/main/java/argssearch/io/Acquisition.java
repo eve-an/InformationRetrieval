@@ -41,7 +41,7 @@ public class Acquisition {
 
     private static void read(String path, BlockingDeque<JsonArgument> queue) {
         logger.info("Start reading Json {} and inserting data into database.", path);
-        ArgDB.getInstance().executeSqlFile("/database/insertion/temp/create_temp_tables.sql");
+        ArgDB.getInstance().executeSqlFile("/database/scripts/insertion/temp/create_temp_tables.sql");
 
         es.submit(new JsonProducer(path, queue));
 
@@ -51,6 +51,7 @@ public class Acquisition {
             e.printStackTrace();
         }
 
-        logger.info("Finished reading Json {}", path);
+        int rows = ArgDB.getInstance().getRowCount("discussion");
+        logger.info("Finished reading Json {}. {} rows were added to the discussion table", path, rows);
     }
 }

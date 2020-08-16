@@ -1,13 +1,10 @@
 package argssearch;
 
 
-import argssearch.shared.db.ArgDB;
-import argssearch.shared.util.FileHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 
 public class Main {
@@ -15,20 +12,15 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     /* TODO: Extract args; Idea:
-        First Arg = JDBC URL for Docker
+        First Arg = JDBC URL for Docker => IMPORTANT: Credentials moved to db.properties file
         Second Arg = Query Input path
         Third Arg = Query Output path
     */
-    public static void main(String[] args) throws URISyntaxException, IOException {
-        if (args.length == 1) {
-            ArgDB.getInstance().connectToDB(args[0]);
-        } else {
-            ArgDB.getInstance().connectToDB();
-        }
-
+    public static void main(String[] args) throws IOException {
         logger.info("Starting ArgsSearch...");
         Demo demo = new Demo();
         demo.demonstrate();
+
         //Indexer.index(c,TokenCachePool.getInstance().getDefault());
         //TFIDFWeighter.weigh();
         /*
@@ -40,7 +32,7 @@ public class Main {
 
          */
         //ConjunctiveRetrieval b = new ConjunctiveRetrieval(c, TokenCachePool.getInstance().getDefault(),
-         //       new PremiseIndexTable());;
+        //       new PremiseIndexTable());;
         //b.execute("Eichhornchen", 0,1);
         //b.execute("Affe", 0,1);
 /*
