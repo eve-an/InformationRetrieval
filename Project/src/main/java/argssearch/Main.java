@@ -2,10 +2,11 @@ package argssearch;
 
 
 import argssearch.shared.db.ArgDB;
-import argssearch.shared.nlp.CoreNlpService;
+import argssearch.shared.util.FileHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 
 
@@ -18,7 +19,7 @@ public class Main {
         Second Arg = Query Input path
         Third Arg = Query Output path
     */
-    public static void main(String[] args) throws URISyntaxException {
+    public static void main(String[] args) throws URISyntaxException, IOException {
         if (args.length == 1) {
             ArgDB.getInstance().connectToDB(args[0]);
         } else {
@@ -26,6 +27,8 @@ public class Main {
         }
 
         logger.info("Starting ArgsSearch...");
+        Demo demo = new Demo();
+        demo.demonstrate();
         //Indexer.index(c,TokenCachePool.getInstance().getDefault());
         //TFIDFWeighter.weigh();
         /*

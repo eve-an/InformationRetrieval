@@ -1,5 +1,6 @@
 package argssearch.shared.nlp;
 
+import argssearch.shared.util.FileHandler;
 import edu.stanford.nlp.simple.*;
 
 import java.io.BufferedReader;
@@ -18,33 +19,21 @@ import java.util.stream.Collectors;
  */
 public class CoreNlpService {
 
-    private final HashSet<String> stopWords;
+    private Set<String> stopWords;
     private static final Pattern pattern = Pattern.compile("[a-zA-Z]{2,}");
 
-    public CoreNlpService() throws URISyntaxException {
-        // In case you dont need named entity recognition remove the ner property
-        // It is the most expensive operation
+    public CoreNlpService() throws IOException {
         stopWords = new HashSet<>();
         initStopWords();
     }
 
     /**
-     * Reads stop words from a list and put them into a HashSet.
+     * Reads stop words from a text file and put them into a HashSet.
      */
-    private void initStopWords() throws URISyntaxException {
-        URL resPath = getClass().getResource("/stopwords.txt");
-        File stopwordsFile = Paths.get(resPath.toURI()).toFile();
-
-        try (BufferedReader br = new BufferedReader(new FileReader(stopwordsFile))) {
-            String word;
-            while ((word = br.readLine()) != null) {
-                if (!word.startsWith("//")) {    // Comments
-                    stopWords.add(word);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void initStopWords() throws IOException {
+        stopWords = new FileHandler().getResourceAsStringStream("/stopwords.txt")
+                .filter(word -> !word.startsWith("//"))
+                .collect(Collectors.toSet());
     }
 
     /**

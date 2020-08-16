@@ -1,4 +1,4 @@
-package argssearch.acquisition;
+package argssearch.io;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;

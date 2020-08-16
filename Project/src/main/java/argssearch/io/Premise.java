@@ -1,4 +1,4 @@
-package argssearch.acquisition;
+package argssearch.io;
 
 
 class Premise {

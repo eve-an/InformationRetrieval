@@ -1,11 +1,15 @@
 package argssearch.shared.db;
 
+import argssearch.shared.exceptions.NoSQLResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.util.stream.Stream;
 
@@ -13,9 +17,8 @@ public class ArgDB {
 
     private static final Logger logger = LoggerFactory.getLogger(ArgDB.class);
     private Connection conn;
-    private static String USERNAME = "irargdb";
-    private static String PASSWORD = "";
-    private static String DB_NAME = "argdb";
+    private static final String USERNAME = "postgres";
+    private static final String DB_NAME = "argdb";
     // Append &password=your_password when you have a password for your db
     public static String DB_URL = String.format("jdbc:postgresql://localhost:5432/%s?user=%s", DB_NAME, USERNAME);
 
@@ -55,24 +58,10 @@ public class ArgDB {
             stmt.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
             stmt.execute("CREATE SCHEMA IF NOT EXISTS " + schema);
         } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            throw new RuntimeException(throwables);
         }
+
         logger.info("Dropped " + schema);
-    }
-
-    /**
-     * Truncates table
-     *
-     * @param table table name
-     */
-    public void truncateTable(final String table) {
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute("TRUNCATE Table " + table);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        logger.info("Truncated Table " + table);
     }
 
     /**
@@ -96,26 +85,10 @@ public class ArgDB {
     }
 
     public void executeSqlFile(String relativePath) {
-        String path = getClass().getResource(relativePath).getPath();
-        if (System.getProperty("os.name").toLowerCase().startsWith("windows") && path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        final ProcessBuilder pb = new ProcessBuilder("psql", "-U", USERNAME, "-d", DB_NAME, "-f", path);
-
         try {
-            Process p = pb.start();
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            String err;
-            while ((err = br.readLine()) != null) {
-                if (err.contains("drop cascades")) {
-                    continue;
-                }
-                logger.error(err);
-            }
-
-        } catch (IOException e) {
-            logger.error("Error while executing {}", path, e);
+            new SQLRunner().run(relativePath);
+        } catch (IOException | SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -157,15 +130,6 @@ public class ArgDB {
         }
     }
 
-    public CallableStatement prepareCall(final String sql) {
-        try {
-            return this.conn.prepareCall(sql);
-        } catch (SQLException sqlE) {
-            sqlE.printStackTrace();
-        }
-        return null;
-    }
-
     public static boolean isException(SQLException sqle) {
         return false;
     }
@@ -177,19 +141,6 @@ public class ArgDB {
             // TODO log
         }
         return null;
-    }
-
-    public long getSequenceId(String sequenceName) {
-        try (ResultSet rs = query(String.format("SELECT last_value FROM %s", sequenceName))) {
-            if (rs.next()) {
-                return rs.getLong(1);
-            }
-        } catch (SQLException throwables) {
-            logger.warn("Could not retrieve current value of sequence '{}' - SQL-Code: {}", sequenceName,
-                    throwables.getErrorCode(), throwables);
-        }
-
-        return -1;
     }
 
     public Array createArrayOf(String type, Object[] array) {
@@ -219,29 +170,23 @@ public class ArgDB {
 
     public void clearTable(final String tableName) {
         try {
-           executeNativeSql(String.format("DELETE FROM %s", tableName));
+            executeNativeSql(String.format("DELETE FROM %s", tableName));
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
     }
 
-    public int getIndexOfTerm(String term) {
+    public int getIndexOfTerm(String term) throws SQLException {
 
-        try {
-            PreparedStatement ps = ArgDB.getInstance().getConn().prepareStatement("SELECT tid FROM token WHERE token = ?");
+        PreparedStatement ps = ArgDB.getInstance().getConn().prepareStatement("SELECT tid FROM token WHERE token = ?");
 
-            ps.setString(1, term);
-            ResultSet rs = ps.executeQuery();
+        ps.setString(1, term);
+        ResultSet rs = ps.executeQuery();
 
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
+        if (rs.next()) {
+            return rs.getInt(1);
+        } else throw new NoSQLResultException("Did not found an index for '" + term + "'");
 
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        return 0;
     }
 
     public Statement getStatement() {
@@ -252,6 +197,9 @@ public class ArgDB {
         }
     }
 
+    public void executeStatement(final String statement) throws SQLException {
+        getConn().createStatement().execute(statement);
+    }
 
     public Connection getConn() {
         return conn;

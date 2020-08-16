@@ -1,7 +1,7 @@
 package argssearch.retrieval.models.vectorspace;
 
-import argssearch.Main;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.exceptions.NoSQLResultException;
 import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
 import argssearch.shared.query.Topic;
@@ -56,9 +56,18 @@ public class VectorSpace {
      */
     private void loadQuery(final String query) {
         queryVector = new Vector(vectorSize);
-        nlpService.lemmatize(query).stream()
-                .map(token -> ArgDB.getInstance().getIndexOfTerm(token))
-                .forEach(id -> queryVector.set(id - 1, 1));   // Postgres starts indices with 1
+
+        List<String> tokens = nlpService.lemmatize(query);
+        for (String token : tokens) {
+            try {
+                int id = ArgDB.getInstance().getIndexOfTerm(token);
+                queryVector.set(id - 1, 1);
+            } catch (NoSQLResultException e) {
+                logger.warn(e.getMessage());
+            } catch (SQLException throwables) {
+                throw new RuntimeException(throwables);
+            }
+        }
     }
 
     public List<Result> query(final Topic topic, final double minRank) {

@@ -1,4 +1,4 @@
-package argssearch.acquisition;
+package argssearch.io;
 
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.db.SqlCodes;

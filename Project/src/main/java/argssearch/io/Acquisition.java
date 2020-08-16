@@ -1,4 +1,4 @@
-package argssearch.acquisition;
+package argssearch.io;
 
 import argssearch.shared.db.ArgDB;
 import org.slf4j.Logger;

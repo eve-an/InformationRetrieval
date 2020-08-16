@@ -1,6 +1,6 @@
 package argssearch;
 
-import argssearch.acquisition.Acquisition;
+import argssearch.io.Acquisition;
 import argssearch.indexing.index.Indexer;
 import argssearch.indexing.index.TFIDFWeighter;
 import argssearch.retrieval.models.ModelType;
@@ -13,6 +13,7 @@ import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class Pipeline {
      * @param topic         Query
      * @param pathToJsonDir path
      */
-    public Pipeline(final Topic topic, final String pathToJsonDir) throws URISyntaxException {
+    public Pipeline(final Topic topic, final String pathToJsonDir) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
@@ -42,7 +43,7 @@ public class Pipeline {
      *
      * @param topic Query
      */
-    public Pipeline(Topic topic) throws URISyntaxException {
+    public Pipeline(Topic topic) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
     }
@@ -62,7 +63,8 @@ public class Pipeline {
             case BOOL_DISJUNCTIVE:
                 break;
             case VECTOR_SPACE:
-                results = queryVectorSpace(topic, 0.3, nlpService);
+                ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
+                results = queryVectorSpace(topic, 0.1, nlpService);
             default:
                 break;
         }
@@ -98,7 +100,6 @@ public class Pipeline {
      */
     private void index(final CoreNlpService nlpService) {
         Indexer.index(nlpService, TokenCachePool.getInstance().get(Integer.MAX_VALUE));
-        ArgDB.getInstance().executeSqlFile("/database/refresh_views.sql");
     }
 
     /**

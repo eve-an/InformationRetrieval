@@ -1,4 +1,4 @@
-package argssearch.acquisition;
+package argssearch.io;
 
 import argssearch.shared.query.Topic;
 import org.w3c.dom.Document;

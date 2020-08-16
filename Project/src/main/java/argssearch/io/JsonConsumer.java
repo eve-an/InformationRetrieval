@@ -1,12 +1,9 @@
-package argssearch.acquisition;
+package argssearch.io;
 
 import argssearch.shared.db.ArgDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.TimeUnit;
 
