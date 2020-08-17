@@ -17,7 +17,9 @@ import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
 import argssearch.shared.query.Result.DocumentType;
 import argssearch.shared.query.Topic;
+
 import java.util.LinkedList;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,79 +68,79 @@ public class Pipeline {
         switch (model) {
             case PHRASE:
                 var pr = new PhraseRetrievalOnAllTables(
-                    this.nlpService,
-                    TokenCachePool.getInstance().getDefault()
+                        this.nlpService,
+                        TokenCachePool.getInstance().getDefault()
                 );
                 final List<Result> psResult = new LinkedList<>();
                 pr.execute(
-                    topic.getTitle(),
-                    0,
-                    0,
-                    0,
-                    3,
-                    2,
-                    1,
-                    100,
-                    100,
-                    100,
-                    100,
-                    (String id, Integer rank, Double weight) -> {
-                        psResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
-                    }
+                        topic.getTitle(),
+                        0,
+                        0,
+                        0,
+                        3,
+                        2,
+                        1,
+                        100,
+                        100,
+                        100,
+                        100,
+                        (String id, Integer rank, Double weight) -> {
+                            psResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                        }
                 );
                 results = psResult;
                 break;
             case BOOL_CONJUNCTIVE:
                 var bc = new ConjunctiveRetrievalOnAllTables(
-                    this.nlpService,
-                    TokenCachePool.getInstance().getDefault()
+                        this.nlpService,
+                        TokenCachePool.getInstance().getDefault()
                 );
                 final List<Result> bcResult = new LinkedList<>();
                 bc.execute(
-                    topic.getTitle(),
-                    0,
-                    0,
-                    0,
-                    3,
-                    2,
-                    1,
-                    100,
-                    100,
-                    100,
-                    100,
-                    (String id, Integer rank, Double weight) -> {
-                        bcResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
-                    }
+                        topic.getTitle(),
+                        0,
+                        0,
+                        0,
+                        3,
+                        2,
+                        1,
+                        100,
+                        100,
+                        100,
+                        100,
+                        (String id, Integer rank, Double weight) -> {
+                            bcResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                        }
                 );
                 results = bcResult;
                 break;
             case BOOL_DISJUNCTIVE:
                 var bd = new DisjunctiveRetrievalOnAllTables(
-                    this.nlpService,
-                    TokenCachePool.getInstance().getDefault()
+                        this.nlpService,
+                        TokenCachePool.getInstance().getDefault()
                 );
                 final List<Result> bdResult = new LinkedList<>();
                 bd.execute(
-                    topic.getTitle(),
-                    0,
-                    0,
-                    0,
-                    3,
-                    2,
-                    1,
-                    100,
-                    100,
-                    100,
-                    100,
-                    (String id, Integer rank, Double weight) -> {
-                        bdResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
-                    }
+                        topic.getTitle(),
+                        0,
+                        0,
+                        0,
+                        3,
+                        2,
+                        1,
+                        100,
+                        100,
+                        100,
+                        100,
+                        (String id, Integer rank, Double weight) -> {
+                            bdResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                        }
                 );
                 results = bdResult;
                 break;
             case VECTOR_SPACE:
                 ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
-                results = queryVectorSpace(topic, 0.1, nlpService);
+                results = queryVectorSpace(topic, 0.1, nlpService, 1, 1, 1);
             default:
                 break;
         }
@@ -184,8 +186,10 @@ public class Pipeline {
      * @param minRank    Documents with a rank which is smaller than minRank will not be returned
      * @param nlpService to get the lemmatized query
      */
-    private List<Result> queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService) throws SQLException {
+    private List<Result> queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService,
+                                          final double discMult,
+                                          final double premiseMult, final double argMult) throws SQLException {
         VectorSpace vs = new VectorSpace(nlpService);
-        return vs.query(query, minRank);
+        return vs.query(query, minRank, discMult, premiseMult, argMult);
     }
 }

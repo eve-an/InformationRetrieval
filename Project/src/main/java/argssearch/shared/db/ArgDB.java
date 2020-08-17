@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.*;
 import java.util.List;
 import java.util.Properties;
@@ -23,8 +25,17 @@ public class ArgDB {
         try {
             // Register Postgres Driver
             Class.forName("org.postgresql.Driver");
-            props = loadProperties("/database/db_dev.properties");  //TODO Change here the credentials for VM
+
+            // Choose the right properties file
+            if (getHostname().equals("tira-ubuntu")) {
+                props = loadProperties("/database/db_montalet.properties");
+            } else {
+                props = loadProperties("/database/db_dev.properties");
+            }
+
             this.conn = DriverManager.getConnection(props.getProperty("url"), props);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Could not get hostname for choosing the right properties file.", e);
         } catch (IOException e) {
             throw new RuntimeException("Could not read database properties.", e);
         } catch (ClassNotFoundException e) {
@@ -32,6 +43,12 @@ public class ArgDB {
         } catch (SQLException e) {
             throw new RuntimeException("Could not connect to database.", e);
         }
+    }
+
+    private String getHostname() throws UnknownHostException {
+        InetAddress addr;
+        addr = InetAddress.getLocalHost();
+        return addr.getHostName();
     }
 
     private Properties loadProperties(final String relativePath) throws IOException {

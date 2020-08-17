@@ -19,7 +19,7 @@ public class Result implements Comparable<Result> {
     private final String unusedField = "Q0";
     private final String documentId;
     private int rank;
-    private final double score;
+    private double score;
     private final String group = "Montalet";
 
     public Result(DocumentType type, int topicNumber, String documentId, int rank, double score) {
@@ -46,6 +46,14 @@ public class Result implements Comparable<Result> {
         this.rank = rank;
     }
 
+    public void multiplyScore(final double multiplier) {
+        setScore(getRank() * multiplier);
+    }
+
+    public void setScore(double score) {
+        this.score = score;
+    }
+
     public int getRank() {
         return rank;
     }
@@ -58,6 +66,9 @@ public class Result implements Comparable<Result> {
         return group;
     }
 
+    public DocumentType getType() {
+        return type;
+    }
 
     @Override
     public boolean equals(Object o) {

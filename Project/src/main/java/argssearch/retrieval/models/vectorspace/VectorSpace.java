@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /**
  * Manages Vector Space retrieval.
@@ -26,6 +27,10 @@ public class VectorSpace {
         final static String argument = "SELECT * FROM inverted_argument_index_view";
         final static String discussion = "SELECT * FROM inverted_discussion_index_view";
         final static String premise = "SELECT * FROM inverted_premise_index_view";
+        final static String retrieveArgumentsFromDiscussion = "SELECT a.* FROM discussion d " +
+                "JOIN premise p on d.did = p.did " +
+                "JOIN argument a on p.pid = a.pid " +
+                "WHERE d.crawlid = ?;";
     }
 
     private final CoreNlpService nlpService;
@@ -48,7 +53,8 @@ public class VectorSpace {
     }
 
     /**
-     * Transforms a query to a Vector.
+     * Transforms a query to a Vector. Each token has an corresponding id in the database.
+     * The id is used as an index in the vector array.
      *
      * @param query query as String
      */
@@ -68,7 +74,8 @@ public class VectorSpace {
         }
     }
 
-    public List<Result> query(final Topic topic, final double minRank) throws SQLException {
+    public List<Result> query(final Topic topic, final double minRank, final double discMult,
+                              final double premiseMult, final double argMult) throws SQLException {
         logger.info("Start retrieving documents with query '{}'", topic.getTitle());
         loadQuery(topic.getTitle());
 
@@ -83,9 +90,9 @@ public class VectorSpace {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         List<Callable<List<Result>>> calls = new ArrayList<>();
-        calls.add(() -> processResult(rArg, minRank, topic.getNumber(), Result.DocumentType.ARGUMENT));
-        calls.add(() -> processResult(rPrem, minRank, topic.getNumber(), Result.DocumentType.PREMISE));
-        calls.add(() -> processResult(rDisc, minRank, topic.getNumber(), Result.DocumentType.DISCUSSION));
+        calls.add(() -> processResult(rArg, minRank, argMult, topic.getNumber(), Result.DocumentType.ARGUMENT));
+        calls.add(() -> processResult(rPrem, minRank, premiseMult, topic.getNumber(), Result.DocumentType.PREMISE));
+        calls.add(() -> processResult(rDisc, minRank, discMult, topic.getNumber(), Result.DocumentType.DISCUSSION));
 
         List<Result> results = new ArrayList<>();
         try {
@@ -116,7 +123,34 @@ public class VectorSpace {
         return results;
     }
 
-    private List<Result> processResult(final ResultSet rs, final double minRank, final int topicNumber,
+    public Map<Result, List<Result>> retrieveArgumentsFromDiscussion(final double minRank, final double multiplier,
+                                                                     final int topicNumber, final List<Result> results) {
+        Map<Result, List<Result>> discussionArgsMap = new HashMap<>();
+        PreparedStatement ps = ArgDB.getInstance().prepareStatement(Query.retrieveArgumentsFromDiscussion);
+        if (results.stream().anyMatch(r -> r.getType() == Result.DocumentType.DISCUSSION)) {
+            List<Result> discussions = results.stream()
+                    .distinct()
+                    .filter(r -> r.getType() == Result.DocumentType.DISCUSSION)
+                    .collect(Collectors.toList());
+
+            for (Result discussion : discussions) {
+                try {
+                    ps.setString(1, discussion.getDocumentId());
+                    List<Result> args = processResult(ps.executeQuery(), minRank, multiplier,
+                            topicNumber, Result.DocumentType.ARGUMENT);
+                    discussionArgsMap.put(discussion, args);
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+            }
+
+        }
+
+        return discussionArgsMap;
+    }
+
+    private List<Result> processResult(final ResultSet rs, final double minRank, final double multiplier,
+                                       final int topicNumber,
                                        final Result.DocumentType type) {
         List<Result> retrieved = new ArrayList<>();
         try {
@@ -145,9 +179,11 @@ public class VectorSpace {
                 double sim = VectorMath.getCosineSimilarity(docVector, queryVector);
 
                 if (sim > minRank) {
-                    retrieved.add(new Result(type, topicNumber, docid, 0, sim));
+                    retrieved.add(new Result(type, topicNumber, docid, 0, sim * multiplier));
                 }
             }
+
+            rs.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }

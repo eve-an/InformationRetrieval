@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 
 public class Main {
@@ -17,6 +19,7 @@ public class Main {
         Third Arg = Query Output path
     */
     public static void main(String[] args) throws IOException {
+
         logger.info("Starting ArgsSearch...");
         Demo demo = new Demo();
         demo.demonstrate();
