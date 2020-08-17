@@ -3,13 +3,21 @@ package argssearch;
 import argssearch.io.Acquisition;
 import argssearch.indexing.index.Indexer;
 import argssearch.indexing.index.TFIDFWeighter;
+import argssearch.retrieval.models.ConjunctiveRetrievalOnAllTables;
+import argssearch.retrieval.models.DisjunctiveRetrieval;
+import argssearch.retrieval.models.DisjunctiveRetrievalOnAllTables;
 import argssearch.retrieval.models.ModelType;
+import argssearch.retrieval.models.PhraseRetrieval;
+import argssearch.retrieval.models.PhraseRetrievalOnAllTables;
 import argssearch.retrieval.models.vectorspace.VectorSpace;
+import argssearch.shared.cache.TokenCache;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
+import argssearch.shared.query.Result.DocumentType;
 import argssearch.shared.query.Topic;
+import java.util.LinkedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,10 +65,76 @@ public class Pipeline {
         // Which Retrieval Model do you want to use?
         switch (model) {
             case PHRASE:
+                var pr = new PhraseRetrievalOnAllTables(
+                    this.nlpService,
+                    TokenCachePool.getInstance().getDefault()
+                );
+                final List<Result> psResult = new LinkedList<>();
+                pr.execute(
+                    topic.getTitle(),
+                    0,
+                    0,
+                    0,
+                    3,
+                    2,
+                    1,
+                    100,
+                    100,
+                    100,
+                    100,
+                    (String id, Integer rank, Double weight) -> {
+                        psResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                    }
+                );
+                results = psResult;
                 break;
             case BOOL_CONJUNCTIVE:
+                var bc = new ConjunctiveRetrievalOnAllTables(
+                    this.nlpService,
+                    TokenCachePool.getInstance().getDefault()
+                );
+                final List<Result> bcResult = new LinkedList<>();
+                bc.execute(
+                    topic.getTitle(),
+                    0,
+                    0,
+                    0,
+                    3,
+                    2,
+                    1,
+                    100,
+                    100,
+                    100,
+                    100,
+                    (String id, Integer rank, Double weight) -> {
+                        bcResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                    }
+                );
+                results = bcResult;
                 break;
             case BOOL_DISJUNCTIVE:
+                var bd = new DisjunctiveRetrievalOnAllTables(
+                    this.nlpService,
+                    TokenCachePool.getInstance().getDefault()
+                );
+                final List<Result> bdResult = new LinkedList<>();
+                bd.execute(
+                    topic.getTitle(),
+                    0,
+                    0,
+                    0,
+                    3,
+                    2,
+                    1,
+                    100,
+                    100,
+                    100,
+                    100,
+                    (String id, Integer rank, Double weight) -> {
+                        bdResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                    }
+                );
+                results = bdResult;
                 break;
             case VECTOR_SPACE:
                 ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
