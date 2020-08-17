@@ -23,7 +23,7 @@ public class ArgDB {
         try {
             // Register Postgres Driver
             Class.forName("org.postgresql.Driver");
-            props = loadProperties("/database/db_dev.properties");
+            props = loadProperties("/database/db_dev.properties");  //TODO Change here the credentials for VM
             this.conn = DriverManager.getConnection(props.getProperty("url"), props);
         } catch (IOException e) {
             throw new RuntimeException("Could not read database properties.", e);
@@ -111,8 +111,8 @@ public class ArgDB {
 
     public void executeNativeSql(final String sql) throws IOException {
         List<String> cmds = List.of(
-                "psql", "-U", props.getProperty("db.user", "postgres"),
-                "-d", props.getProperty("db.password", ""),
+                "psql", "-U", props.getProperty("user", "postgres"),
+                "-d", props.getProperty("name", ""),
                 "-c", sql
         );
         final ProcessBuilder pb = new ProcessBuilder(cmds);

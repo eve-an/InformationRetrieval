@@ -14,7 +14,7 @@ public class Demo {
     public void demonstrate() throws IOException {
         Topic topic = new Topic(1, "women's rights", "", "");
         Path path = Files.createTempFile("parliamentary", ".json");
-        Files.write(path, new FileHandler().getResourceAsString("/demo/parliamentary.json").getBytes());
+        Files.write(path, new FileHandler().getResourceAsString("/demo/demo.json").getBytes());
 
         Pipeline pipeline = new Pipeline(topic, path.toAbsolutePath().normalize().toString());
 
