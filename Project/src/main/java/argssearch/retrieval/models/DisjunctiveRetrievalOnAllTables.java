@@ -101,9 +101,9 @@ public class DisjunctiveRetrievalOnAllTables {
             , final int tokenMinWeightDiscussion
             , final int tokenMinWeightPremise
             , final int tokenMinWeightArgument
-            , final int tokenWeightMultipierDiscussion
-            , final int tokenWeightMultipierPremise
-            , final int tokenWeightMultipierArgument
+            , final double tokenWeightMultipierDiscussion
+            , final double tokenWeightMultipierPremise
+            , final double tokenWeightMultipierArgument
             , final int limitDiscussion
             , final int limitPremise
             , final int limitArgument
@@ -114,17 +114,17 @@ public class DisjunctiveRetrievalOnAllTables {
         String tokenArray = preprocessedText.stream().map(this.cache::get).map(String::valueOf).collect(Collectors.joining(", ", "{", "}"));
 
         try{
-            this.query.setInt(1, tokenWeightMultipierArgument);
+            this.query.setDouble(1, tokenWeightMultipierArgument);
             this.query.setInt(2, tokenMinWeightArgument);
             this.query.setString(3, tokenArray);
             this.query.setInt(4, preprocessedText.size());
             this.query.setInt(5, limitArgument);
-            this.query.setInt(6, tokenWeightMultipierPremise);
+            this.query.setDouble(6, tokenWeightMultipierPremise);
             this.query.setInt(7, tokenMinWeightPremise);
             this.query.setString(8, tokenArray);
             this.query.setInt(9, preprocessedText.size());
             this.query.setInt(10, limitPremise);
-            this.query.setInt(11, tokenWeightMultipierDiscussion);
+            this.query.setDouble(11, tokenWeightMultipierDiscussion);
             this.query.setInt(12, tokenMinWeightDiscussion);
             this.query.setString(13, tokenArray);
             this.query.setInt(14, preprocessedText.size());

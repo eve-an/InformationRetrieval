@@ -1,8 +1,9 @@
 package argssearch;
 
-import argssearch.io.Acquisition;
 import argssearch.indexing.index.Indexer;
 import argssearch.indexing.index.TFIDFWeighter;
+import argssearch.io.Acquisition;
+import argssearch.retrieval.models.ConjunctiveRetrieval;
 import argssearch.retrieval.models.ConjunctiveRetrievalOnAllTables;
 import argssearch.retrieval.models.DisjunctiveRetrieval;
 import argssearch.retrieval.models.DisjunctiveRetrievalOnAllTables;
@@ -10,24 +11,22 @@ import argssearch.retrieval.models.ModelType;
 import argssearch.retrieval.models.PhraseRetrieval;
 import argssearch.retrieval.models.PhraseRetrievalOnAllTables;
 import argssearch.retrieval.models.vectorspace.VectorSpace;
-import argssearch.shared.cache.TokenCache;
 import argssearch.shared.cache.TokenCachePool;
+import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
 import argssearch.shared.query.Result.DocumentType;
 import argssearch.shared.query.Topic;
-
-import java.util.LinkedList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Pipeline {
 
@@ -45,7 +44,10 @@ public class Pipeline {
     public Pipeline(final Topic topic, final String pathToJsonDir) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
+
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
+        index(nlpService);      // Index all Documents
+        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
     }
 
     /**
@@ -58,9 +60,11 @@ public class Pipeline {
         nlpService = new CoreNlpService();
     }
 
-    public void exec(final ModelType model) throws SQLException {
-        index(nlpService);      // Index all Documents
-        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+    public void execMulti(final ModelType model,
+        final double discussionMultiplier,
+        final double premiseMultiplier,
+        final double argumentMultiplier,
+        final Consumer<Result> resultConsumer) throws SQLException {
 
         List<Result> results = new ArrayList<>();   // Retrieved Documents
 
@@ -77,9 +81,9 @@ public class Pipeline {
                         0,
                         0,
                         0,
-                        3,
-                        2,
-                        1,
+                        discussionMultiplier,
+                        premiseMultiplier,
+                        argumentMultiplier,
                         100,
                         100,
                         100,
@@ -101,9 +105,9 @@ public class Pipeline {
                         0,
                         0,
                         0,
-                        3,
-                        2,
-                        1,
+                        discussionMultiplier,
+                        premiseMultiplier,
+                        argumentMultiplier,
                         100,
                         100,
                         100,
@@ -125,9 +129,9 @@ public class Pipeline {
                         0,
                         0,
                         0,
-                        3,
-                        2,
-                        1,
+                        discussionMultiplier,
+                        premiseMultiplier,
+                        argumentMultiplier,
                         100,
                         100,
                         100,
@@ -140,7 +144,12 @@ public class Pipeline {
                 break;
             case VECTOR_SPACE:
                 ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
-                results = queryVectorSpace(topic, 0.1, nlpService, 1, 1, 1);
+                results = queryVectorSpace(topic,
+                    0.1,
+                    nlpService,
+                    discussionMultiplier,
+                    premiseMultiplier,
+                    argumentMultiplier);
             default:
                 break;
         }
@@ -150,13 +159,87 @@ public class Pipeline {
             return;
         }
 
+        // Give the results of the query to the consumer
         for (Result result : results) { // Print the results to see what we have retrieved
-            System.out.println(result);
+            resultConsumer.accept(result);
         }
-
-        // Todo: Process Results, e.g. write them to a file or do whatever you want
     }
 
+    public void execSingle(final ModelType model,
+        final AbstractIndexTable indexTable,
+        final Consumer<Result> resultConsumer) throws SQLException {
+
+        List<Result> results = new ArrayList<>();   // Retrieved Documents
+
+        // Which Retrieval Model do you want to use?
+        switch (model) {
+            case PHRASE:
+                var pr = new PhraseRetrieval(
+                    this.nlpService,
+                    TokenCachePool.getInstance().getDefault(),
+                    indexTable
+                );
+                final List<Result> psResult = new LinkedList<>();
+                pr.execute(
+                    topic.getTitle(),
+                    0,
+                    1,
+                    (String id, Integer rank, Double weight) -> {
+                        psResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                    }
+                );
+                results = psResult;
+                break;
+            case BOOL_CONJUNCTIVE:
+                var cr = new ConjunctiveRetrieval(
+                    this.nlpService,
+                    TokenCachePool.getInstance().getDefault(),
+                    indexTable
+                );
+                final List<Result> crResult = new LinkedList<>();
+                cr.execute(
+                    topic.getTitle(),
+                    0,
+                    1,
+                    (String id, Integer rank, Double weight) -> {
+                        crResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                    }
+                );
+                results = crResult;
+                break;
+            case BOOL_DISJUNCTIVE:
+                var dr = new DisjunctiveRetrieval(
+                    this.nlpService,
+                    TokenCachePool.getInstance().getDefault(),
+                    indexTable
+                );
+                final List<Result> drResult = new LinkedList<>();
+                dr.execute(
+                    topic.getTitle(),
+                    0,
+                    1,
+                    (String id, Integer rank, Double weight) -> {
+                        drResult.add(new Result(DocumentType.ARGUMENT, topic.getNumber(), id, rank, weight));
+                    }
+                );
+                results = drResult;
+                break;
+            case VECTOR_SPACE:
+                // TODO
+            default:
+                break;
+        }
+
+        if (results.isEmpty()) {
+            logger.info("Found no results for query '{}' for model {}", topic.getTitle(), model.toString());
+            return;
+        }
+
+        // Give the results of the query to the consumer
+        for (Result result : results) { // Print the results to see what we have retrieved
+            resultConsumer.accept(result);
+        }
+    }
 
     /**
      * Read JSONs into a database.

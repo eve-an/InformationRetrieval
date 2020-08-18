@@ -8,14 +8,12 @@ public class ArgumentParser {
   private static class Argument {
     private final String fullName;
     private final String shortName;
-    private final String defaultValue;
     private String parsedValue;
     private final String description;
 
-    public Argument(String fullName, String shortName, String defaultValue, String description) {
+    public Argument(String fullName, String shortName, String description) {
       this.fullName = fullName;
       this.shortName = shortName;
-      this.defaultValue = defaultValue;
       this.description = description;
     }
 
@@ -29,18 +27,18 @@ public class ArgumentParser {
   private Map<String, Argument> argumentsByFullName;
   private Map<String, Argument> argumentsByShortName;
 
-  private ArgumentParser() {
+  public ArgumentParser() {
     this.argumentsByFullName = new LinkedHashMap<>();
     this.argumentsByShortName = new LinkedHashMap<>();
   }
 
-  public ArgumentParser addStringArg(final String fullName, final String shortName, final String defaultValue, final String desc) {
+  public ArgumentParser addStringArg(final String fullName, final String shortName, final String desc) {
 
     if (argumentsByFullName.containsKey(fullName) || argumentsByShortName.containsKey(shortName)) {
       this.printError("No duplicate Arguments allowed");
     }
 
-    Argument a = new Argument(fullName, shortName, defaultValue, desc);
+    Argument a = new Argument(fullName, shortName, desc);
     this.argumentsByFullName.put(fullName, a);
     this.argumentsByShortName.put(shortName, a);
     return this;
@@ -75,7 +73,7 @@ public class ArgumentParser {
         Argument a = argumentsByFullName.get(argumentFullName);
         if (a != null) {
           a.parsedValue = arg.substring(arg.indexOf(' ')+1);
-          argumentsByFullName.put(argumentFullName, a);
+          // argumentsByFullName.put(argumentFullName, a);
         }
         continue;
       }
@@ -85,7 +83,7 @@ public class ArgumentParser {
         Argument a = argumentsByShortName.get(argumentShortName);
         if (a != null) {
           a.parsedValue = arg.substring(arg.indexOf(' ')+1);
-          argumentsByShortName.put(argumentShortName, a);
+          // argumentsByShortName.put(argumentShortName, a);
         }
         continue;
       }
@@ -95,20 +93,11 @@ public class ArgumentParser {
 
   public String getString(final String name) {
     Argument a = this.argumentsByFullName.get(name);
-    if (a == null) {
-      return null;
-    }
-    return a.parsedValue != null  ? a.parsedValue : a.defaultValue;
+    return a == null ? null : a.parsedValue;
   }
 
-  /**
-   * Get the builder object
-   * */
-  public static ArgumentParser build() {return new ArgumentParser();}
-
   private void printError(String msg) {
-    System.out.println(msg);
-    System.exit(1);
+    throw new RuntimeException(msg);
   }
 
   private void printHelp() {

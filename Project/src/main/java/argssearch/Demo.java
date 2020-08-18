@@ -18,10 +18,11 @@ public class Demo {
 
         Pipeline pipeline = new Pipeline(topic, path.toAbsolutePath().normalize().toString());
 
+        /*
         try {
             pipeline.exec(ModelType.VECTOR_SPACE);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-        }
+        }*/
     }
 }

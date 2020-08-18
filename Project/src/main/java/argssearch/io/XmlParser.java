@@ -1,6 +1,8 @@
 package argssearch.io;
 
 import argssearch.shared.query.Topic;
+import java.util.LinkedList;
+import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -21,34 +23,39 @@ public class XmlParser {
      * @param path path to xml file
      * @return query
      */
-    public Topic from(final String path) {
+    public static List<Topic> from(final String path) {
         Document doc = toDocument(path);
         doc.getDocumentElement().normalize();
 
         NodeList nodeList = doc.getElementsByTagName("topic");
-        if (nodeList.getLength() != 1) {
-            throw new RuntimeException("Expected 1 topic body but " + nodeList.getLength() + " are present.");
+        if (nodeList.getLength() == 0) {
+            throw new RuntimeException("Expected at least one topic");
         }
 
-        Node node = nodeList.item(0);   // topic body as node
-        if (node.getNodeType() != Node.ELEMENT_NODE) {
-            throw new RuntimeException("Expected an Element-Node.");
+        List<Topic> topicList = new LinkedList<>();
+        for (int nodeNum = 0; nodeNum < nodeList.getLength(); nodeNum++) {
+            Node node = nodeList.item(nodeNum);   // topic body as node
+            if (node.getNodeType() != Node.ELEMENT_NODE) {
+                throw new RuntimeException("Expected an Element-Node.");
+            }
+
+            String number = getSingleNode(node, "number").getTextContent().trim();
+
+            if (!number.matches("\\d+")) {
+                throw new RuntimeException("Could not parse number of Topic!");
+            }
+
+            String title = getSingleNode(node, "title").getTextContent().trim();
+            String description = getSingleNode(node, "description").getTextContent().trim();
+            String narrative = getSingleNode(node, "narrative").getTextContent().trim();
+
+            topicList.add(new Topic(Integer.parseInt(number), title, description, narrative));
         }
 
-        String number = getSingleNode(node, "number").getTextContent().trim();
-
-        if (!number.matches("\\d+")) {
-            throw new RuntimeException("Could not parse number of Topic!");
-        }
-
-        String title = getSingleNode(node, "title").getTextContent().trim();
-        String description = getSingleNode(node, "description").getTextContent().trim();
-        String narrative = getSingleNode(node, "narrative").getTextContent().trim();
-
-        return new Topic(Integer.parseInt(number), title, description, narrative);
+        return topicList;
     }
 
-    private Node getSingleNode(Node node, String tagName) {
+    private static Node getSingleNode(Node node, String tagName) {
         Element element = (Element) node; // topic body as element
 
         NodeList titleList = element.getElementsByTagName(tagName);
@@ -60,7 +67,7 @@ public class XmlParser {
     }
 
 
-    private Document toDocument(final String path) {
+    private static Document toDocument(final String path) {
         final File input = new File(path);
         final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder db;

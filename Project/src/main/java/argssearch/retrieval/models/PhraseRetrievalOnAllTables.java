@@ -101,9 +101,9 @@ public class PhraseRetrievalOnAllTables {
             , final int tokenMinWeightDiscussion
             , final int tokenMinWeightPremise
             , final int tokenMinWeightArgument
-            , final int tokenWeightMultipierDiscussion
-            , final int tokenWeightMultipierPremise
-            , final int tokenWeightMultipierArgument
+            , final double tokenWeightMultiplierDiscussion
+            , final double tokenWeightMultiplierPremise
+            , final double tokenWeightMultiplierArgument
             , final int limitDiscussion
             , final int limitPremise
             , final int limitArgument
@@ -127,7 +127,7 @@ public class PhraseRetrievalOnAllTables {
 
         try{
             this.query.setString(1, tokenOrder);
-            this.query.setInt(2, tokenWeightMultipierArgument);
+            this.query.setDouble(2, tokenWeightMultiplierArgument);
             this.query.setInt(3, tokenMinWeightArgument);
             this.query.setString(4, tokenArray);
             this.query.setInt(5, input);
@@ -135,7 +135,7 @@ public class PhraseRetrievalOnAllTables {
             this.query.setInt(7, limitArgument);
 
             this.query.setString(8, tokenOrder);
-            this.query.setInt(9, tokenWeightMultipierPremise);
+            this.query.setDouble(9, tokenWeightMultiplierPremise);
             this.query.setInt(10, tokenMinWeightPremise);
             this.query.setString(11, tokenArray);
             this.query.setInt(12, input);
@@ -143,7 +143,7 @@ public class PhraseRetrievalOnAllTables {
             this.query.setInt(14, limitPremise);
 
             this.query.setString(15, tokenOrder);
-            this.query.setInt(16, tokenWeightMultipierDiscussion);
+            this.query.setDouble(16, tokenWeightMultiplierDiscussion);
             this.query.setInt(17, tokenMinWeightDiscussion);
             this.query.setString(18, tokenArray);
             this.query.setInt(19, input);
