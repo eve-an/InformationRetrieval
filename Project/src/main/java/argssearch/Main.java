@@ -27,7 +27,7 @@ public class Main {
             .addStringArg("singleMultiRun", "smr" , "Should a single multi run be performed (discussionMultiplier:premiseMultiplier:argumentMultiplier) ie. (1:1:1)")
             .addStringArg("inputDirectory", "i" , "The path to the topic file")
             .addStringArg("outputDirectory", "o", "The directory that should contain the outputs")
-            .addStringArg("jsonDirectory", "j", "The path of the json file containing the crawled data");
+            .addStringArg("jsonPath", "j", "The path of the json file containing the crawled data");
 
         argParser.parseArgs(args);
 
@@ -40,10 +40,10 @@ public class Main {
                 throw new RuntimeException("ParameterRun needs to be specified (fromMultiplier|toMultiplier|stepSize");
             }
 
-            ParameterRunExecutor.WeightRun(
+            ParameterRunExecutor.MultiplierRun(
                 argParser.getString("inputDirectory"),
                 argParser.getString("outputDirectory"),
-                argParser.getString("jsonDirectory"),
+                argParser.getString("jsonPath"),
                 Double.parseDouble(values[0]),
                 Double.parseDouble(values[1]),
                 Double.parseDouble(values[2]));
@@ -60,7 +60,7 @@ public class Main {
             SingleMultiRunExecutor.Compare(
                 argParser.getString("inputDirectory"),
                 argParser.getString("outputDirectory"),
-                argParser.getString("jsonDirectory"),
+                argParser.getString("jsonPath"),
                 Double.parseDouble(values[0]),
                 Double.parseDouble(values[1]),
                 Double.parseDouble(values[2])

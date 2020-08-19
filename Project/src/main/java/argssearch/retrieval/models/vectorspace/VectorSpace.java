@@ -4,6 +4,7 @@ import argssearch.shared.db.ArgDB;
 import argssearch.shared.exceptions.NoSQLResultException;
 import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
+import argssearch.shared.query.Result.DocumentType;
 import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,11 @@ public class VectorSpace {
                 "JOIN premise p on d.did = p.did " +
                 "JOIN argument a on p.pid = a.pid " +
                 "WHERE d.crawlid = ?;";
+        final static String retrieveArgumentsFromPremise = "SELECT * FROM premise p " +
+                "JOIN argument a on p.pid = a.pid " +
+                "WHERE p.crawlid = ?";
+        final static String retrieveArgumentsFromArgument = "SELECT * FROM argument " +
+                "WHERE crawlid = ?";
     }
 
     private final CoreNlpService nlpService;
@@ -139,6 +145,50 @@ public class VectorSpace {
                     List<Result> args = processResult(ps.executeQuery(), minRank, multiplier,
                             topicNumber, Result.DocumentType.ARGUMENT);
                     discussionArgsMap.put(discussion, args);
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+            }
+
+        }
+
+        return discussionArgsMap;
+    }
+
+    public Map<Result, List<Result>> retrieveArgumentsFromType(
+        final DocumentType type,
+        final double minRank,
+        final double multiplier,
+        final int topicNumber,
+        final List<Result> results) {
+        Map<Result, List<Result>> discussionArgsMap = new HashMap<>();
+
+        String query = "";
+        switch (type) {
+            case ARGUMENT:
+                query = Query.retrieveArgumentsFromArgument;
+                break;
+            case PREMISE:
+                query = Query.retrieveArgumentsFromPremise;
+                break;
+            case DISCUSSION:
+                query = Query.retrieveArgumentsFromDiscussion;
+                break;
+        }
+
+        PreparedStatement ps = ArgDB.getInstance().prepareStatement(query);
+        if (results.stream().anyMatch(r -> r.getType() == type)) {
+            List<Result> filteredResults = results.stream()
+                .distinct()
+                .filter(r -> r.getType() == type)
+                .collect(Collectors.toList());
+
+            for (Result result : filteredResults) {
+                try {
+                    ps.setString(1, result.getDocumentId());
+                    List<Result> args = processResult(ps.executeQuery(), minRank, multiplier,
+                        topicNumber, Result.DocumentType.ARGUMENT);
+                    discussionArgsMap.put(result, args);
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
                 }
