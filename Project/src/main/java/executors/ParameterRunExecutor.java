@@ -13,7 +13,7 @@ import java.util.Locale;
 
 public class ParameterRunExecutor {
 
-  public static void WeightRun(
+  public static void MultiplierRun (
       String topicFile,
       String destFolder,
       final String pathToJsonDir,

@@ -14,10 +14,14 @@ import argssearch.retrieval.models.vectorspace.VectorSpace;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
+import argssearch.shared.db.ArgumentIndexTable;
+import argssearch.shared.db.DiscussionIndexTable;
+import argssearch.shared.db.PremiseIndexTable;
 import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
 import argssearch.shared.query.Result.DocumentType;
 import argssearch.shared.query.Topic;
+import com.sun.jdi.connect.Connector.Argument;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +37,7 @@ public class Pipeline {
 
     private static final Logger logger = LoggerFactory.getLogger(Pipeline.class);
 
-    private final Topic topic;                   // Query
+    private Topic topic;                   // Query
     private final CoreNlpService nlpService;    // Language Processing
 
     /**
@@ -50,14 +55,15 @@ public class Pipeline {
         TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
     }
 
-    /**
-     * Use this when your Database is already filled.
-     *
-     * @param topic Query
-     */
-    public Pipeline(Topic topic) throws IOException {
-        this.topic = topic;
+    public Pipeline(final String pathToJsonDir) throws IOException {
         nlpService = new CoreNlpService();
+        readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
+        index(nlpService);      // Index all Documents
+        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+    }
+
+    public void setTopic(final Topic topic) {
+        this.topic = topic;
     }
 
     public void execMulti(final ModelType model,
@@ -225,7 +231,16 @@ public class Pipeline {
                 results = drResult;
                 break;
             case VECTOR_SPACE:
-                // TODO
+                ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
+                results = queryVectorSpaceByTable(
+                    indexTable,
+                    topic,
+                    0.1,
+                    nlpService,
+                    1,
+                    1,
+                    1
+                );
             default:
                 break;
         }
@@ -274,5 +289,42 @@ public class Pipeline {
                                           final double premiseMult, final double argMult) throws SQLException {
         VectorSpace vs = new VectorSpace(nlpService);
         return vs.query(query, minRank, discMult, premiseMult, argMult);
+    }
+
+    /**
+     * Retrieve relevant documents with {@link VectorSpace}-Model of the specified
+     * type and return their respected arguments.
+     * Documents are ordered according to their score in descending order.
+     *
+     *
+     * @param query      query to process with VSM
+     * @param minRank    Documents with a rank which is smaller than minRank will not be returned
+     * @param nlpService to get the lemmatized query
+     */
+    private List<Result> queryVectorSpaceByTable(
+        final AbstractIndexTable table,
+        final Topic query,
+        final double minRank,
+        final CoreNlpService nlpService,
+        final double discMult,
+        final double premiseMult,
+        final double argMult) throws SQLException {
+        DocumentType t = DocumentType.ARGUMENT;
+        if (table instanceof DiscussionIndexTable) t = DocumentType.DISCUSSION;
+        if (table instanceof PremiseIndexTable) t = DocumentType.PREMISE;
+
+        VectorSpace vs = new VectorSpace(nlpService);
+        final DocumentType finalT = t;
+        return vs.retrieveArgumentsFromType(
+            t,
+            minRank,
+            1,
+            topic.getNumber(),
+            vs.query(query, minRank, discMult, premiseMult, argMult).stream()
+                .filter(r -> r.getType() == finalT)
+                .collect(Collectors.toList())
+        ).values().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
     }
 }

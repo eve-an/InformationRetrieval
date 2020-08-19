@@ -4,6 +4,7 @@ import argssearch.shared.db.ArgDB;
 import argssearch.shared.exceptions.NoSQLResultException;
 import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.query.Result;
+import argssearch.shared.query.Result.DocumentType;
 import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +26,21 @@ public class VectorSpace {
      */
     static class Query {
         final static String argument = "SELECT * FROM inverted_argument_index_view";
+        final static String filteredArgument = "SELECT * FROM inverted_argument_index_view WHERE crawlid IN ($)";
         final static String discussion = "SELECT * FROM inverted_discussion_index_view";
         final static String premise = "SELECT * FROM inverted_premise_index_view";
-        final static String retrieveArgumentsFromDiscussion = "SELECT a.* FROM discussion d " +
+
+        final static String retrieveArgumentsFromDiscussion = "SELECT a.crawlid FROM discussion d " +
                 "JOIN premise p on d.did = p.did " +
                 "JOIN argument a on p.pid = a.pid " +
                 "WHERE d.crawlid = ?;";
+
+        final static String retrieveArgumentsFromPremise = "SELECT * FROM premise p " +
+                "JOIN argument a on p.pid = a.pid " +
+                "WHERE p.crawlid = ?";
+
+        final static String retrieveArgumentsFromArgument = "SELECT * FROM argument " +
+                "WHERE crawlid = ?";
     }
 
     private final CoreNlpService nlpService;
@@ -123,22 +133,53 @@ public class VectorSpace {
         return results;
     }
 
-    public Map<Result, List<Result>> retrieveArgumentsFromDiscussion(final double minRank, final double multiplier,
-                                                                     final int topicNumber, final List<Result> results) {
+    public Map<Result, List<Result>> retrieveArgumentsFromType(
+        final DocumentType type,
+        final double minRank,
+        final double multiplier,
+        final int topicNumber,
+        final List<Result> results) {
         Map<Result, List<Result>> discussionArgsMap = new HashMap<>();
-        PreparedStatement ps = ArgDB.getInstance().prepareStatement(Query.retrieveArgumentsFromDiscussion);
-        if (results.stream().anyMatch(r -> r.getType() == Result.DocumentType.DISCUSSION)) {
-            List<Result> discussions = results.stream()
-                    .distinct()
-                    .filter(r -> r.getType() == Result.DocumentType.DISCUSSION)
-                    .collect(Collectors.toList());
 
-            for (Result discussion : discussions) {
+        String query = "";
+        switch (type) {
+            case ARGUMENT:
+                query = Query.retrieveArgumentsFromArgument;
+                break;
+            case PREMISE:
+                query = Query.retrieveArgumentsFromPremise;
+                break;
+            case DISCUSSION:
+                query = Query.retrieveArgumentsFromDiscussion;
+                break;
+        }
+
+        PreparedStatement ps = ArgDB.getInstance().prepareStatement(query);
+        if (results.stream().anyMatch(r -> r.getType() == type)) {
+            List<Result> filteredResults = results.stream()
+                .distinct()
+                .filter(r -> r.getType() == type)
+                .collect(Collectors.toList());
+
+            for (Result result : filteredResults) {
                 try {
-                    ps.setString(1, discussion.getDocumentId());
-                    List<Result> args = processResult(ps.executeQuery(), minRank, multiplier,
-                            topicNumber, Result.DocumentType.ARGUMENT);
-                    discussionArgsMap.put(discussion, args);
+                    ps.setString(1, result.getDocumentId());
+
+                    ResultSet rs = ps.executeQuery();
+                    List<String> argIds = new ArrayList<>();
+
+                    while (rs.next()) {
+                        argIds.add("'" + rs.getString(1) + "'");
+                    }
+
+                    rs.close();
+
+                    String argumentIndexQuery = Query.filteredArgument.replace("$", String.join(",", argIds));
+                    Statement stmt = ArgDB.getInstance().getStatement();
+
+                    List<Result> args = processResult(stmt.executeQuery(argumentIndexQuery), minRank, multiplier,
+                        topicNumber, Result.DocumentType.ARGUMENT);
+                    discussionArgsMap.put(result, args);
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
                 }
