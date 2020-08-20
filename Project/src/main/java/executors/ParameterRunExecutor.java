@@ -25,8 +25,9 @@ public class ParameterRunExecutor {
       destFolder = destFolder.substring(0, destFolder.length()-1);
     }
 
+    Pipeline pipeline = new Pipeline(pathToJsonDir);
     for (Topic topic : XmlParser.from(topicFile)) {
-      Pipeline pipeline = new Pipeline(topic, pathToJsonDir);
+      pipeline.setTopic(topic);
 
       for (ModelType model : ModelType.values()) {
         for (double dWeight = fromWeight; dWeight <= toWeight; dWeight += stepSize) {
