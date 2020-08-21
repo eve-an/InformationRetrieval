@@ -46,17 +46,22 @@ public class Pipeline {
      * @param topic         Query
      * @param pathToJsonDir path
      */
-    public Pipeline(final Topic topic, final String pathToJsonDir) throws IOException {
+    public Pipeline(final Topic topic, final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
+
+        if (skipReadingCrawl) return;
 
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
         TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+
     }
 
-    public Pipeline(final String pathToJsonDir) throws IOException {
+    public Pipeline(final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         nlpService = new CoreNlpService();
+        if (skipReadingCrawl) return;
+
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
         TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
@@ -260,13 +265,12 @@ public class Pipeline {
      * Read JSONs into a database.
      * When jsonPath is a directory the whole directory will be read.
      *
-     * @param jsonPath path to jsons
      */
-    private void readIntoDatabase(final String jsonPath) {
+    private void readIntoDatabase(final String inputDirectory) {
         // Start with a new, clean schema
         ArgDB.getInstance().dropSchema("public");
         ArgDB.getInstance().createSchema();
-        Acquisition.exec(jsonPath, new LinkedBlockingDeque<>(16));
+        Acquisition.exec(inputDirectory, new LinkedBlockingDeque<>(16));
     }
 
     /**

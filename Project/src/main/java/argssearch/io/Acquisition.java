@@ -20,7 +20,7 @@ public class Acquisition {
      * The idea is to have a JsonProducer which reads the JSON files, transforms them to POJOs and put them into a Queue.
      * The JsonConsumer works in another Thread. It reads the Queue's items and save them into the database.
      *
-     * @param path  path to JSON. If path is a dir the function will read all the JSONs inside this directory
+     * @param path  path to JSONs. If path is a dir the function will read all the JSONs inside this directory
      * @param queue working queue of JsonConsumer and JsonProducer
      */
     public static void exec(String path, BlockingDeque<JsonArgument> queue) {
@@ -28,7 +28,7 @@ public class Acquisition {
 
         if (file.isDirectory()) {   // Read all files in directory
             try {
-                Files.list(file.toPath()).forEach(json -> read(json.toString(), queue));
+                Files.list(file.toPath()).filter(jsonPath -> jsonPath.toString().endsWith(".json")).forEach(json -> read(json.toString(), queue));
             } catch (IOException e) {
                 e.printStackTrace();
             }
