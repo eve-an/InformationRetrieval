@@ -5,6 +5,9 @@ package argssearch;
 import argssearch.shared.util.ArgumentParser;
 import executors.ParameterRunExecutor;
 import executors.SingleMultiRunExecutor;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +28,18 @@ public class Main {
         argParser
             .addStringArg("parameterRun", "pr", "Should a parameter run be performed (fromMultiplier:toMultiplier:stepSize) ie. (0:3:0.2)")
             .addStringArg("singleMultiRun", "smr" , "Should a single multi run be performed (discussionMultiplier:premiseMultiplier:argumentMultiplier) ie. (1:1:1)")
-            .addStringArg("inputDirectory", "i" , "The path to the topic file")
+            .addStringArg("inputDirectory", "i" , "Input directory containing all files")
             .addStringArg("outputDirectory", "o", "The directory that should contain the outputs")
-            .addStringArg("jsonPath", "j", "The path of the json file containing the crawled data");
+            .addStringArg("testDirectory", "t", "Where the run files will go")
+            .addStringArg("skipReadingCrawl", "skip", "Dont read the crawled data in");
 
         argParser.parseArgs(args);
+
+        // Save outputDirectory path
+        String path = argParser.getString("testDirectory") ;
+        if (!path.endsWith("/")) path += "/";
+        path += "outputPath.txt";
+        Files.write(Paths.get(path), argParser.getString("outputDirectory").getBytes());
 
         if (argParser.getString("parameterRun") != null
             &&
@@ -42,8 +52,8 @@ public class Main {
 
             ParameterRunExecutor.MultiplierRun(
                 argParser.getString("inputDirectory"),
-                argParser.getString("outputDirectory"),
-                argParser.getString("jsonPath"),
+                argParser.getString("testDirectory"),
+                argParser.getString("skipReadingCrawl") != null && argParser.getString("skipReadingCrawl").equals("true"),
                 Double.parseDouble(values[0]),
                 Double.parseDouble(values[1]),
                 Double.parseDouble(values[2]));
@@ -59,8 +69,8 @@ public class Main {
 
             SingleMultiRunExecutor.Compare(
                 argParser.getString("inputDirectory"),
-                argParser.getString("outputDirectory"),
-                argParser.getString("jsonPath"),
+                argParser.getString("testDirectory"),
+                argParser.getString("skipReadingCrawl") != null && argParser.getString("skipReadingCrawl").equals("true"),
                 Double.parseDouble(values[0]),
                 Double.parseDouble(values[1]),
                 Double.parseDouble(values[2])

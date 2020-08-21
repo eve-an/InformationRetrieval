@@ -18,9 +18,9 @@ import java.util.List;
 public class SingleMultiRunExecutor {
 
   public static void Compare(
-      String topicFile,
+      String inputDirectory,
       String destFolder,
-      final String pathToJsonDir,
+      final boolean skipReadingCrawl,
       final double dMultiplier,
       final double pMultiplier,
       final double aMultiplier) throws IOException {
@@ -29,9 +29,10 @@ public class SingleMultiRunExecutor {
     if (destFolder.endsWith("/")) {
       destFolder = destFolder.substring(0, destFolder.length()-1);
     }
+    if (!inputDirectory.endsWith("/")) inputDirectory += "/";
 
-    Pipeline pipeline = new Pipeline(pathToJsonDir);
-    for (Topic topic : XmlParser.from(topicFile)) {
+    Pipeline pipeline = new Pipeline(destFolder, skipReadingCrawl);
+    for (Topic topic : XmlParser.from(inputDirectory + "topics.xml")) {
       pipeline.setTopic(topic);
       for (ModelType model : ModelType.values()) {
         // MULTI

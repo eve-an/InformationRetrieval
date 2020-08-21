@@ -14,9 +14,9 @@ import java.util.Locale;
 public class ParameterRunExecutor {
 
   public static void MultiplierRun (
-      String topicFile,
+      String inputDirectory,
       String destFolder,
-      final String pathToJsonDir,
+      final boolean skipReadingCrawl,
       final double fromWeight,
       final double toWeight,
       final double stepSize) throws IOException {
@@ -24,9 +24,10 @@ public class ParameterRunExecutor {
     if (destFolder.endsWith("/")) {
       destFolder = destFolder.substring(0, destFolder.length()-1);
     }
+    if (!inputDirectory.endsWith("/")) inputDirectory += "/";
 
-    Pipeline pipeline = new Pipeline(pathToJsonDir);
-    for (Topic topic : XmlParser.from(topicFile)) {
+    Pipeline pipeline = new Pipeline(inputDirectory, skipReadingCrawl);
+    for (Topic topic : XmlParser.from(inputDirectory + "topics.xml")) {
       pipeline.setTopic(topic);
 
       for (ModelType model : ModelType.values()) {
