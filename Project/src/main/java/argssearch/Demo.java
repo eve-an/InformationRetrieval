@@ -16,7 +16,7 @@ public class Demo {
         Path path = Files.createTempFile("parliamentary", ".json");
         Files.write(path, new FileHandler().getResourceAsString("/demo/demo.json").getBytes());
 
-        Pipeline pipeline = new Pipeline(topic, path.toAbsolutePath().normalize().toString());
+        //Pipeline pipeline = new Pipeline(topic, path.toAbsolutePath().normalize().toString());
 
         /*
         try {
