@@ -62,6 +62,8 @@ public class Pipeline {
         nlpService = new CoreNlpService();
         if (skipReadingCrawl) return;
 
+        // Make sure the temp schema is empty
+        ArgDB.getInstance().dropSchema("temp");
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
         TFIDFWeighter.weigh();  // Weight the terms with TF-IDF

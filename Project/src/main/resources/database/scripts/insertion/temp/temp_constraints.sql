@@ -26,6 +26,14 @@ WHERE crawlid IN (SELECT crawlid
                   GROUP BY crawlid
                   HAVING count(*) > 1);
 
+-- duplicate temp_arguments
+DELETE
+FROM temp.source
+WHERE "domain" IN (SELECT "domain"
+                  FROM temp.source
+                  GROUP BY "domain"
+                  HAVING count(*) > 1);
+
 -- Set temp_temp_sourceid in temp_discussion
 UPDATE temp.discussion d
 SET (sourceid) = (
@@ -86,7 +94,3 @@ INSERT INTO source TABLE temp.source;
 INSERT INTO discussion TABLE temp.discussion;
 INSERT INTO premise TABLE temp.premise;
 INSERT INTO argument TABLE temp.argument;
-
-DROP SCHEMA temp cascade;
-
-

@@ -1,6 +1,7 @@
 package argssearch.io;
 
 import argssearch.shared.db.ArgDB;
+import org.apache.xpath.Arg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ class JsonConsumer implements Runnable {
             db.execBatch();
             logger.info("Copying temp data to original database.");
             ArgDB.getInstance().executeSqlFile("/database/scripts/insertion/temp/temp_constraints.sql");
-
+            ArgDB.getInstance().dropSchema("temp");
         } catch (InterruptedException e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
