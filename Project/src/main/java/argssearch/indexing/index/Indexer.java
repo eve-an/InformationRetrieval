@@ -120,6 +120,8 @@ public class Indexer extends Thread{
       e.printStackTrace();
     }
     logger.info("Shutting down");
+
+    this.argDB.close();
   }
 
   @Override

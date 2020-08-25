@@ -39,17 +39,17 @@ public class XmlParser {
                 throw new RuntimeException("Expected an Element-Node.");
             }
 
-            String number = getSingleNode(node, "number").getTextContent().trim();
+            String number = getSingleNode(node, "num").getTextContent().trim();
 
             if (!number.matches("\\d+")) {
                 throw new RuntimeException("Could not parse number of Topic!");
             }
 
             String title = getSingleNode(node, "title").getTextContent().trim();
-            String description = getSingleNode(node, "description").getTextContent().trim();
-            String narrative = getSingleNode(node, "narrative").getTextContent().trim();
+            //String description = getSingleNode(node, "description").getTextContent().trim();
+            //String narrative = getSingleNode(node, "narrative").getTextContent().trim();
 
-            topicList.add(new Topic(Integer.parseInt(number), title, description, narrative));
+            topicList.add(new Topic(Integer.parseInt(number), title, "description", "narrative"));
         }
 
         return topicList;

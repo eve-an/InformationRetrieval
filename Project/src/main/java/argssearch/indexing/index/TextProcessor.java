@@ -81,6 +81,7 @@ class TextProcessor extends Thread {
         }
 
         logger.info("Shutting down");
+        this.argDB.close();
     }
 
     public synchronized void finishUp() {

@@ -210,6 +210,15 @@ public class ArgDB {
         stmt.close();
     }
 
+    public void close() {
+        try {
+            if (!this.conn.isClosed())
+                this.conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static class InstanceHolder {
         private static ArgDB argDBInstance;
     }
