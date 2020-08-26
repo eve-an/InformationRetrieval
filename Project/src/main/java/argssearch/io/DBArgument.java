@@ -1,6 +1,9 @@
 package argssearch.io;
 
 
+import argssearch.shared.nlp.CoreNlpService;
+
+import java.io.IOException;
 import java.util.StringTokenizer;
 
 class Argument {
@@ -28,7 +31,15 @@ class Argument {
     }
 
     public int getLength() {
-       return new StringTokenizer(content).countTokens();
+
+        try {
+            int count = new CoreNlpService().getWordCount(content);
+            System.out.println("Count = " + count + " - " + content + " - " + crawlId);
+            return count;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
 }
