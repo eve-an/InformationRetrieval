@@ -1,6 +1,8 @@
 package argssearch.io;
 
 
+import java.util.StringTokenizer;
+
 class Premise {
 
     private final String crawlId;
@@ -19,4 +21,7 @@ class Premise {
         return title;
     }
 
+    public int getLength() {
+        return new StringTokenizer(title).countTokens();
+    }
 }

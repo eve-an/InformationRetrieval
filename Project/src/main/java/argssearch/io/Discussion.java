@@ -2,6 +2,7 @@ package argssearch.io;
 
 
 import java.util.Objects;
+import java.util.StringTokenizer;
 
 class Discussion {
 
@@ -42,5 +43,9 @@ class Discussion {
     @Override
     public int hashCode() {
         return Objects.hash(crawlId);
+    }
+
+    public int getLength() {
+        return new StringTokenizer(title).countTokens();
     }
 }

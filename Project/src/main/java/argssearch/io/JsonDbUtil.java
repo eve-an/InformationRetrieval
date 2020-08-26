@@ -25,11 +25,11 @@ class JsonDbUtil {
     private void initStatements() {
         insertSource = ArgDB.getInstance().prepareStatement("INSERT INTO temp.source (domain) VALUES (?)");
         insertDiscussion = ArgDB.getInstance().prepareStatement(
-                "INSERT INTO temp.discussion (crawlid, title, url) VALUES (?,?,?)");
+                "INSERT INTO temp.discussion (crawlid, title, url, length) VALUES (?,?,?)");
         insertPremise = ArgDB.getInstance()
-                .prepareStatement("INSERT INTO temp.premise (crawlid, title) VALUES (?,?)");
+                .prepareStatement("INSERT INTO temp.premise (crawlid, title, length) VALUES (?,?)");
         insertArgument = ArgDB.getInstance().prepareStatement(
-                "INSERT INTO temp.argument (crawlid, content, ispro, totaltokens) VALUES (?,?,?,0)");
+                "INSERT INTO temp.argument (crawlid, content, ispro, totaltokens, length) VALUES (?,?,?,0)");
     }
 
     public void save(Source source) {
@@ -49,6 +49,7 @@ class JsonDbUtil {
             insertDiscussion.setString(1, discussion.getCrawlId());
             insertDiscussion.setString(2, discussion.getTitle());
             insertDiscussion.setString(3, discussion.getUrl());
+            insertDiscussion.setInt(4, discussion.getLength());
             insertDiscussion.addBatch();
             batchCounter++;
         } catch (SQLException throwables) {
@@ -65,11 +66,13 @@ class JsonDbUtil {
         try {
             insertPremise.setString(1, premise.getCrawlId());
             insertPremise.setString(2, argument.getContent());
+            insertPremise.setInt(3, premise.getLength());
             insertPremise.addBatch();
 
             insertArgument.setString(1, argument.getCrawlId());
             insertArgument.setString(2, premise.getTitle());
             insertArgument.setBoolean(3, argument.isPro());
+            insertArgument.setInt(4, argument.getLength());
             insertArgument.addBatch();
         } catch (SQLException throwables) {
             throw new RuntimeException(throwables.getLocalizedMessage());

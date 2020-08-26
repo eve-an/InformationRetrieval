@@ -1,6 +1,8 @@
 package argssearch.io;
 
 
+import java.util.StringTokenizer;
+
 class Argument {
 
     private final String crawlId;
@@ -23,6 +25,10 @@ class Argument {
 
     public boolean isPro() {
         return isPro;
+    }
+
+    public int getLength() {
+       return new StringTokenizer(content).countTokens();
     }
 
 }
