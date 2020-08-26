@@ -1,16 +1,20 @@
 package argssearch.io;
 
 
+import argssearch.shared.nlp.CoreNlpService;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
-class Discussion {
+class DBDiscussion {
 
     private final String crawlId;
     private final String title;
     private final String url;
 
-    public Discussion(JsonArgument argument) {
+    public DBDiscussion(JsonArgument argument) {
         crawlId = argument.getContext().getSourceId();
         title = argument.getContext().getDiscussionTitle();
         url = argument.getContext().getSourceUrl();
@@ -36,7 +40,7 @@ class Discussion {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Discussion that = (Discussion) o;
+        DBDiscussion that = (DBDiscussion) o;
         return crawlId.equals(that.crawlId);
     }
 
@@ -46,6 +50,10 @@ class Discussion {
     }
 
     public int getLength() {
-        return new StringTokenizer(title).countTokens();
+        try {
+            return new CoreNlpService().getWordCount(title);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

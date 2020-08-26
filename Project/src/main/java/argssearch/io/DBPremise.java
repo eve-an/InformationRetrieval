@@ -1,14 +1,18 @@
 package argssearch.io;
 
 
+import argssearch.shared.nlp.CoreNlpService;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.StringTokenizer;
 
-class Premise {
+class DBPremise {
 
     private final String crawlId;
     private final String title;
 
-    public Premise(JsonArgument argument) {
+    public DBPremise(JsonArgument argument) {
         crawlId = argument.getId();
         title = argument.getPremises().get(0).getText();
     }
@@ -22,6 +26,10 @@ class Premise {
     }
 
     public int getLength() {
-        return new StringTokenizer(title).countTokens();
+        try {
+            return new CoreNlpService().getWordCount(title);
+        } catch (IOException e) {
+           throw new UncheckedIOException(e);
+        }
     }
 }

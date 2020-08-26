@@ -4,15 +4,15 @@ package argssearch.io;
 import argssearch.shared.nlp.CoreNlpService;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
+import java.io.UncheckedIOException;
 
-class Argument {
+class DBArgument {
 
     private final String crawlId;
     private final String content;
     private final boolean isPro;
 
-    public Argument(JsonArgument argument) {
+    public DBArgument(JsonArgument argument) {
         crawlId = argument.getId();
         content = argument.getConclusion();
         isPro = argument.getPremises().get(0).getStance().equalsIgnoreCase("PRO");
@@ -31,15 +31,11 @@ class Argument {
     }
 
     public int getLength() {
-
         try {
-            int count = new CoreNlpService().getWordCount(content);
-            System.out.println("Count = " + count + " - " + content + " - " + crawlId);
-            return count;
+            return new CoreNlpService().getWordCount(content);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
-        return 0;
     }
 
 }

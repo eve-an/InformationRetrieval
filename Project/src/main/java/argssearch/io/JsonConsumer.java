@@ -1,7 +1,6 @@
 package argssearch.io;
 
 import argssearch.shared.db.ArgDB;
-import org.apache.xpath.Arg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +20,8 @@ class JsonConsumer implements Runnable {
     @Override
     public void run() {
         try {
-            Source source = null;
-            Discussion currentDiscussion = null;
+            DBSource dbSource = null;
+            DBDiscussion currentDbDiscussion = null;
             while (true) {
                 JsonArgument jsonArgument = queue.poll(1, TimeUnit.SECONDS);
 
@@ -30,22 +29,22 @@ class JsonConsumer implements Runnable {
                     break;
                 }
 
-                if (source == null) {
-                    source = new Source(jsonArgument);
-                    db.save(source);
+                if (dbSource == null) {
+                    dbSource = new DBSource(jsonArgument);
+                    db.save(dbSource);
                 }
 
-                Discussion discussion = new Discussion(jsonArgument);
+                DBDiscussion dbDiscussion = new DBDiscussion(jsonArgument);
 
-                if (!discussion.equals(currentDiscussion)) {
-                    currentDiscussion = discussion;
-                    db.save(currentDiscussion);
+                if (!dbDiscussion.equals(currentDbDiscussion)) {
+                    currentDbDiscussion = dbDiscussion;
+                    db.save(currentDbDiscussion);
                 }
 
-                Premise premise = new Premise(jsonArgument);
-                Argument argument = new Argument(jsonArgument);
+                DBPremise dbPremise = new DBPremise(jsonArgument);
+                DBArgument dbArg = new DBArgument(jsonArgument);
 
-                db.save(premise, argument);
+                db.save(dbPremise, dbArg);
             }
 
             db.execBatch();

@@ -54,7 +54,7 @@ public class Pipeline {
 
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
-        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+       // TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
 
     }
 
@@ -67,7 +67,7 @@ public class Pipeline {
         ArgDB.getInstance().dropSchema("temp");
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
-        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+        //TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
     }
 
     public void setTopic(final Topic topic) {
