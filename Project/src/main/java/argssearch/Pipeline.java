@@ -39,7 +39,7 @@ public class Pipeline {
 
     private Topic topic;                   // Query
     private final CoreNlpService nlpService;    // Language Processing
-
+    private VectorSpace vs;
     /**
      * Use this when you have an empty Database and you want to fill it with the JSON-Data.
      *
@@ -49,24 +49,25 @@ public class Pipeline {
     public Pipeline(final Topic topic, final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
-
+        vs = new VectorSpace(nlpService);
         if (skipReadingCrawl) return;
 
-        readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
-        index(nlpService);      // Index all Documents
-        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+        //readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
+        //index(nlpService);      // Index all Documents
+        //TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
 
     }
 
     public Pipeline(final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         nlpService = new CoreNlpService();
+        vs = new VectorSpace(nlpService);
         if (skipReadingCrawl) return;
 
         // Make sure the temp schema is empty
-        ArgDB.getInstance().dropSchema("temp");
-        readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
-        index(nlpService);      // Index all Documents
-        TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
+        //ArgDB.getInstance().dropSchema("temp");
+        //readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
+        //index(nlpService);      // Index all Documents
+        //TFIDFWeighter.weigh();  // Weight the terms with TF-IDF
     }
 
     public void setTopic(final Topic topic) {
@@ -293,7 +294,6 @@ public class Pipeline {
     private List<Result> queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService,
                                           final double discMult,
                                           final double premiseMult, final double argMult) throws SQLException {
-        VectorSpace vs = new VectorSpace(nlpService);
         return vs.query(query, minRank, discMult, premiseMult, argMult);
     }
 
@@ -319,7 +319,6 @@ public class Pipeline {
         if (table instanceof DiscussionIndexTable) t = DocumentType.DISCUSSION;
         if (table instanceof PremiseIndexTable) t = DocumentType.PREMISE;
 
-        VectorSpace vs = new VectorSpace(nlpService);
         final DocumentType finalT = t;
         return vs.retrieveArgumentsFromType(
             t,

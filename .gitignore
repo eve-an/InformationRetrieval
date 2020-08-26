@@ -37,4 +37,6 @@ target/
 # Argument-Jsons
 *.json
 
+# Python
+__pycache__/
 

@@ -39,50 +39,13 @@ public class Main {
 
         argParser.parseArgs(args);
 
-
-        // Save outputDirectory path
-        String path = argParser.getString("testDirectory") ;
-        if (!path.endsWith("/")) path += "/";
-        path += "outputPath.txt";
-        File f = new File(path);
-        f.mkdirs();
-        
-        Files.write(Paths.get(path), argParser.getString("outputDirectory").getBytes());
-
-        if (argParser.getString("parameterRun") != null
-            &&
-            !argParser.getString("parameterRun").toLowerCase().isEmpty()) {
-            // Extract the specified values
-            String[] values = argParser.getString("parameterRun").split("_");
-            if (values.length != 3) {
-                throw new RuntimeException("ParameterRun needs to be specified (fromMultiplier|toMultiplier|stepSize");
-            }
-
-            ParameterRunExecutor.MultiplierRun(
-                argParser.getString("inputDirectory"),
-                "~/TEST", //"~/TEST";
-                argParser.getString("skipReadingCrawl") != null && argParser.getString("skipReadingCrawl").equals("true"),
-                Double.parseDouble(values[0]),
-                Double.parseDouble(values[1]),
-                Double.parseDouble(values[2]));
-        }
-        if (argParser.getString("singleMultiRun") != null
-            &&
-            !argParser.getString("singleMultiRun").isEmpty()) {
-            // Extract the specified multiplier
-            String[] values = argParser.getString("singleMultiRun").split("_");
-            if (values.length != 3) {
-                throw new RuntimeException("ParameterRun needs to be specified (fromMultiplier|toMultiplier|stepSize");
-            }
-
-            SingleMultiRunExecutor.Compare(
-                argParser.getString("inputDirectory"),
-                "~/TEST",
-                argParser.getString("skipReadingCrawl") != null && argParser.getString("skipReadingCrawl").equals("true"),
-                Double.parseDouble(values[0]),
-                Double.parseDouble(values[1]),
-                Double.parseDouble(values[2])
-            );
-        }
+        ParameterRunExecutor.MultiplierRun(
+            argParser.getString("inputDirectory"),
+            argParser.getString("testDirectory"),
+            true,
+            0,
+            3,
+            0.1
+        );
     }
 }
