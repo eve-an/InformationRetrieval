@@ -1,57 +1,90 @@
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 import evaluator_base as eval
+import numpy as np
 import sys
-from os import path, walk
+import os
 
-# qrels path
-# path to root folder of all runs
+import matplotlib.pyplot as plt
+plt.rcdefaults()
 
 
 def main():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 5:
+        print("sm/pr qrelsFilePath testRunDir diagramOutputDir")
         exit(1)
 
-    qrelsFileDir = sys.argv[1]
-    testRunDir = sys.argv[2]
-    k = int(sys.argv[3])
+    evaluationType = sys.argv[1]
+    qrelsFilePath = sys.argv[2]
+    testRunDir = sys.argv[3]
+    diagramOutputDir = sys.argv[4]
 
-    scores = {}
-    qRelsContent = eval.readQrelsFile(qrelsFileDir)
+    result = eval.collect(qrelsFilePath, testRunDir)
 
-    # go through all files topicNum/retrievalModel/dMul-pMul-aMul.txt
-    for (root, _, files) in walk(testRunDir):
-        for file in files:
-            filePath = path.join(root, file)
-            # extract the multipliers from the file name
-            dMul, pMul, aMul = file[:-4].split('-')
-            # caluclate the score of that file
-            calcuatedScore = eval.score(
-                qRelsContent, eval.readRun(filePath, k), k)
-            # add the score to the right place in the scores dict
-            if dMul not in scores:
-                scores[dMul] = {}
-            if pMul not in scores[dMul]:
-                scores[dMul][pMul] = {}
-            if aMul not in scores[dMul][pMul]:
-                scores[dMul][pMul][aMul] = []
-            scores[dMul][pMul][aMul].append(calcuatedScore)
+    if evaluationType.lower() == 'sm':
+        singleMulti(result, diagramOutputDir)
+    if evaluationType.lower() == 'pr':
+        parameterRun(result, diagramOutputDir)
 
-    # calculate the average score for the topics for the given multipliers
-    for dMul in scores:
-        for pMul in scores[dMul]:
-            for aMul in scores[dMul][pMul]:
-                avgScore = sum(scores[dMul][pMul][aMul]) / \
-                    len(scores[dMul][pMul][aMul])
-                scores[dMul][pMul][aMul] = avgScore
 
-    bestMults = (0, 0, 0)
-    bestScore = -1
-    for dMul in scores:
-        for pMul in scores[dMul]:
-            for aMul in scores[dMul][pMul]:
-                if avgScore > bestScore:
-                    bestScore = scores[dMul][pMul][aMul]
-                    bestMults = (dMul, pMul, aMul)
-    print(bestMults, bestScore)
+def singleMulti(result, diagramOutputDir):
+    print(result)
+    for modelName in result:
+        objects = [name[:-4] for name in result[modelName].keys()]
+        y_pos = np.arange(len(objects))
+        performance = [value for value in (
+            result[modelName][comparisonName] for comparisonName in result[modelName])]
+
+        plt.bar(y_pos, performance, align='center', alpha=0.5)
+        plt.xticks(y_pos, objects)
+        plt.ylabel('NDCG')
+        plt.title('Retrieval Models')
+
+        plt.savefig(os.path.join(diagramOutputDir,
+                                 modelName + '.png'), bbox_inches='tight')
+
+
+def parameterRun(result, diagramOutputDir, maxCount=None):
+    for modelName in result:
+        print(modelName)
+        print('-------------------------------------------------------------')
+        count = len(result[modelName])
+        if maxCount:
+            count = maxCount
+        for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1])[:count]:
+            print(k, v)
+        print('-------------------------------------------------------------')
+
+
+def _parameterRun(result, diagramOutputDir):
+    for modelName in result:
+        X = set()
+        Y = set()
+        C = []
+        for comparisonName in result[modelName]:
+            dMul, pMul, aMul = comparisonName[:-4].split('-')
+            X.add(float(dMul))
+            Y.add(float(pMul))
+
+        X = list(X)
+        X.sort()
+        Y = list(Y)
+        Y.sort()
+        Z = np.zeros((len(X), len(Y)))
+
+        for comparisonName in result[modelName]:
+            dMul, pMul, aMul = comparisonName[:-4].split('-')
+            Z[X.index(float(dMul))][Y.index(float(pMul))] = float(aMul)
+            C.append(float(result[modelName][comparisonName]))
+
+        X = np.asarray(X)
+        Y = np.asarray(Y)
+        X, Y = np.meshgrid(X, Y)
+
+        # create the figure, add a 3d axis, set the viewing angle
+        ax = plt.axes(projection='3d')
+        ax.plot3D(X, Y, Z, 'grey')
+        plt.show()
 
 
 if __name__ == '__main__':

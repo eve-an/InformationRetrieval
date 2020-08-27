@@ -1,98 +1,38 @@
-import sys
-import math
-import re
+from trectools import TrecQrel, TrecRun, procedures, misc
+import os
 import numpy as np
-from os import walk, path
-
-from sklearn.metrics import ndcg_score
 
 
-def score(qRelsContent, fileContent, k):
-    if len(fileContent) == 0:
-        return 0
+def collect(qrelsFilePath, baseDir):
+    qrels = TrecQrel(qrelsFilePath)
 
-    truths = []
-    guesses = []
+    result = {}
+    topic_path_name = _getDirectoryContent(baseDir, directory=True)
 
-    # calculate the dcg score based on our output
-    for lineData in fileContent:
-        topicNum, id, guess = lineData['topicNum'], lineData['id'], lineData['guess']
-        guesses.append(float(guess.replace(',', '.')))
-        if topicNum in qRelsContent and id in qRelsContent[topicNum]:
-            truths.append(float(qRelsContent[topicNum][id]))
-        else:
-            truths.append(float(0))
+    for topicPath, _ in topic_path_name:
+        for modelPath, modelName in _getDirectoryContent(topicPath, directory=True):
+            if modelName not in result:
+                result[modelName] = {}
 
-    truth = np.asarray([truths])
-    guess = np.asarray([guesses])
+            for filePath, fileName in _getDirectoryContent(modelPath, file=True):
+                run = TrecRun(filePath)
+                runResult = run.evaluate_run(qrels, True)
+                rs = list(runResult.get_results_for_metric('P_10').values())
+                score = np.mean(rs)
 
-    return ndcg_score(truth, guess, k=k)
+                if fileName not in result[modelName]:
+                    result[modelName][fileName] = [score]
+                else:
+                    result[modelName][fileName].append(score)
+    # Calculate average over all topics
+    for modelName in result:
+        for comparisonName in result[modelName]:
+            result[modelName][comparisonName] = sum(
+                result[modelName][comparisonName]) / len(result[modelName][comparisonName])
 
-
-def score_old(qRelsContent, fileContent, k):
-    if len(fileContent) == 0:
-        return 0
-
-    # dcg score
-    dcg = 0.0
-    # extracted topic number
-    _topicNum = 0
-    # calculate the dcg score based on our output
-    for lineNum, lineData in enumerate(fileContent):
-        topicNum, id = lineData['topicNum'], lineData['id']
-        # safe the topic number so it can be retieved in the qRelsContent dict
-        _topicNum = topicNum
-        if topicNum in qRelsContent and id in qRelsContent[topicNum]:
-            weight = qRelsContent[topicNum][id]
-            dcg += weight / math.log(lineNum + 1, 2)
-
-    # dcgStart score
-    dcgStar = 0.0
-    # get all scores and sort them in descending order
-    values = [d for d in qRelsContent[_topicNum].values()]
-    values.sort(reverse=True)
-    # turn all negative numbers into zeros
-    map(lambda val: min(0, val), values)
-    # add some additional zeros so that there are k rows
-    if len(values) < int(k):
-        values = values + [0 for i in range(k-len(values))]
-
-    # limit the size
-    values = values[:int(k)]
-    # calculate dcg*
-    for i, v in enumerate(values):
-        l = math.log((i + 1), 2)
-        if l > 0:
-            dcgStar += v / l
-
-    # return the normalized score
-    return dcg / dcgStar
+    return result
 
 
-def readRun(pathToFile, lineCount):
-    fileContent = []
-    with open(pathToFile) as f:
-        content = [l.lstrip() for l in f.readlines()]
-        for i, line in enumerate(content):
-            s = line.split(' ')
-            if len(s) == 0 or len(s[0]) == 0:
-                continue
-            fileContent.append({'topicNum': s[0], 'id': s[2], 'guess': s[4]})
-            if i+1 == lineCount:
-                break
-    return fileContent
-
-
-def readQrelsFile(pathToFile):
-    qRelsContent = {}
-    with open(pathToFile) as f:
-        content = [l.strip() for l in f.readlines()]
-        for line in content:
-            topicNum, _, argId, weight = line.split(' ')
-            if topicNum not in qRelsContent:
-                qRelsContent[topicNum] = {}
-            if argId not in qRelsContent[topicNum]:
-                qRelsContent[topicNum][argId] = {}
-
-            qRelsContent[topicNum][argId] = float(weight)
-    return qRelsContent
+def _getDirectoryContent(path, file=False, directory=False):
+    return [(os.path.join(path, o), o) for o in os.listdir(path)
+            if (directory and os.path.isdir(os.path.join(path, o)) or (file and os.path.isfile(os.path.join(path, o))))]
