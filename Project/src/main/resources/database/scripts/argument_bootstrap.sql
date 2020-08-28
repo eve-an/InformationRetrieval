@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS argument (
   crawlID TEXT UNIQUE NOT NULL,
   content text NOT NULL,
   totalTokens INT NOT NULL,
-  isPro BOOLEAN NOT NULL
+  isPro BOOLEAN NOT NULL,
+  length INT
 );

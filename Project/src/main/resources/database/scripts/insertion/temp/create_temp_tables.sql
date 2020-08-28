@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS temp.discussion
     sourceID INT,
     crawlID  TEXT NOT NULL,
     title    TEXT NOT NULL,
-    url      TEXT
+    url      TEXT,
+    length INT
 );
 
 CREATE TABLE IF NOT EXISTS temp.premise
@@ -20,7 +21,8 @@ CREATE TABLE IF NOT EXISTS temp.premise
     pID     SERIAL,
     dID     INT,
     crawlID TEXT NOT NULL,
-    title   TEXT NOT NULL
+    title   TEXT NOT NULL,
+    length INT
 );
 
 CREATE TABLE IF NOT EXISTS temp.argument
@@ -30,7 +32,8 @@ CREATE TABLE IF NOT EXISTS temp.argument
     crawlID     TEXT    NOT NULL,
     content     text    NOT NULL,
     totalTokens INT     NOT NULL,
-    isPro       BOOLEAN NOT NULL
+    isPro       BOOLEAN NOT NULL,
+    length INT
 );
 
 -- Update sequences

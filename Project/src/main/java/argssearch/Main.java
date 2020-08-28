@@ -1,20 +1,20 @@
 package argssearch;
 
 
-
-import java.io.File;
-import java.nio.file.Path;
-import java.util.Arrays;
+import argssearch.indexing.index.Indexer;
+import argssearch.indexing.index.TFIDFWeighter;
+import argssearch.io.Acquisition;
+import argssearch.shared.cache.TokenCachePool;
+import argssearch.shared.db.ArgDB;
+import argssearch.shared.nlp.CoreNlpService;
 import argssearch.shared.util.ArgumentParser;
 import executors.ParameterRunExecutor;
-import executors.SingleMultiRunExecutor;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.concurrent.LinkedBlockingDeque;
 
 
 public class Main {
@@ -27,7 +27,6 @@ public class Main {
         Third Arg = Query Output path
     */
     public static void main(String[] args) throws IOException {
-        System.out.println(Arrays.toString(args));
         ArgumentParser argParser = new ArgumentParser();
         argParser
             .addStringArg("parameterRun", "pr", "Should a parameter run be performed (fromMultiplier:toMultiplier:stepSize) ie. (0:3:0.2)")

@@ -100,6 +100,7 @@ public class ArgDB {
 
     public void executeSqlFile(String relativePath) {
         try {
+            logger.debug("Executing sql file '{}'", relativePath);
             new SQLRunner().run(relativePath);
         } catch (IOException | SQLException e) {
             throw new RuntimeException(e);
@@ -108,6 +109,7 @@ public class ArgDB {
 
     public PreparedStatement prepareStatement(String query) {
         try {
+            logger.debug("Preparing Statement {}", query);
             return this.conn.prepareStatement(query);
         } catch (SQLException sqlE) {
             // TODO log this
@@ -118,6 +120,7 @@ public class ArgDB {
 
     public PreparedStatement prepareStatementWithReturnOfId(String query, String primaryKeyAttributeName) {
         try {
+            logger.debug("Preparing Statement with return id: Query ='{}', ID-Name={}", query, primaryKeyAttributeName);
             return this.conn.prepareStatement(query, new String[]{primaryKeyAttributeName});
         } catch (SQLException sqlE) {
             // TODO log this
@@ -127,6 +130,7 @@ public class ArgDB {
     }
 
     public void executeNativeSql(final String sql) throws IOException {
+        logger.debug("Executing native sql '{}'", sql);
         List<String> cmds = List.of(
                 "psql", "-U", props.getProperty("user", "postgres"),
                 "-d", props.getProperty("name", ""),
@@ -172,6 +176,7 @@ public class ArgDB {
 
     public void clearTable(final String tableName) {
         try {
+            logger.debug("Clearing table '{}'", tableName);
             executeNativeSql(String.format("DELETE FROM %s", tableName));
         } catch (IOException ex) {
             ex.printStackTrace();   // TODO handle
@@ -205,6 +210,7 @@ public class ArgDB {
     }
 
     public void executeStatement(final String statement) throws SQLException {
+        logger.debug("Executing Statement '{}'", statement);
         Statement stmt = conn.createStatement();
         stmt.execute(statement);
         stmt.close();

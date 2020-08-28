@@ -3,11 +3,11 @@ package argssearch.io;
 
 import java.util.Objects;
 
-class Source {
+class DBSource {
 
     private final String domain;
 
-    public Source(JsonArgument argument) {
+    public DBSource(JsonArgument argument) {
         domain = argument.getContext().getSourceDomain();
     }
 
@@ -23,8 +23,8 @@ class Source {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Source source = (Source) o;
-        return domain.equals(source.domain);
+        DBSource DBSource = (DBSource) o;
+        return domain.equals(DBSource.domain);
     }
 
     @Override

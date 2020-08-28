@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS discussion (
   sourceID INT REFERENCES source NOT NULL,
   crawlID TEXT UNIQUE NOT NULL,
   title TEXT NOT NULL,
-  url TEXT
+  url TEXT,
+  length INT
 );

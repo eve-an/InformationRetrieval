@@ -25,14 +25,14 @@ class JsonDbUtil {
     private void initStatements() {
         insertSource = ArgDB.getInstance().prepareStatement("INSERT INTO temp.source (domain) VALUES (?)");
         insertDiscussion = ArgDB.getInstance().prepareStatement(
-                "INSERT INTO temp.discussion (crawlid, title, url) VALUES (?,?,?)");
+                "INSERT INTO temp.discussion (crawlid, title, url, length) VALUES (?,?,?,?)");
         insertPremise = ArgDB.getInstance()
-                .prepareStatement("INSERT INTO temp.premise (crawlid, title) VALUES (?,?)");
+                .prepareStatement("INSERT INTO temp.premise (crawlid, title, length) VALUES (?,?,?)");
         insertArgument = ArgDB.getInstance().prepareStatement(
-                "INSERT INTO temp.argument (crawlid, content, ispro, totaltokens) VALUES (?,?,?,0)");
+                "INSERT INTO temp.argument (crawlid, content, ispro, totaltokens, length) VALUES (?,?,?,0,?)");
     }
 
-    public void save(Source source) {
+    public void save(DBSource source) {
         try {
             insertSource.setString(1, source.getDomain());
             insertSource.executeUpdate();
@@ -44,11 +44,12 @@ class JsonDbUtil {
         }
     }
 
-    public void save(Discussion discussion) {
+    public void save(DBDiscussion discussion) {
         try {
             insertDiscussion.setString(1, discussion.getCrawlId());
             insertDiscussion.setString(2, discussion.getTitle());
             insertDiscussion.setString(3, discussion.getUrl());
+            insertDiscussion.setInt(4, discussion.getLength());
             insertDiscussion.addBatch();
             batchCounter++;
         } catch (SQLException throwables) {
@@ -61,15 +62,18 @@ class JsonDbUtil {
         }
     }
 
-    public void save(Premise premise, Argument argument) {
+    public void save(DBPremise premise, DBArgument argument) {
         try {
+            // Premise title and Argument content are switched, also their lengths
             insertPremise.setString(1, premise.getCrawlId());
             insertPremise.setString(2, argument.getContent());
+            insertPremise.setInt(3, argument.getLength());
             insertPremise.addBatch();
 
             insertArgument.setString(1, argument.getCrawlId());
             insertArgument.setString(2, premise.getTitle());
             insertArgument.setBoolean(3, argument.isPro());
+            insertArgument.setInt(4, premise.getLength());
             insertArgument.addBatch();
         } catch (SQLException throwables) {
             throw new RuntimeException(throwables.getLocalizedMessage());

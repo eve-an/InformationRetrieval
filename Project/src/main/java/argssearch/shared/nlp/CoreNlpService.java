@@ -52,6 +52,10 @@ public class CoreNlpService {
 
     }
 
+    public int getWordCount(final String document) {
+        return new Document(document).sentences().stream().map(Sentence::length).reduce(0, Integer::sum);
+    }
+
     /**
      * Checks if a token is a stop word and matches the regex.
      * The regex accepts only words with alphabetical characters and a minimum length of 2.
