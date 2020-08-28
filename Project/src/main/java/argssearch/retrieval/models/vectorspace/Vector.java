@@ -10,19 +10,21 @@ import java.util.Map;
  */
 public class Vector {
 
-    private double norm2;
+    private Double norm2;
     private final Map<Integer, Double> weights;
 
-    /**
-     * Constructs a Vector with given size and initialize it's weight with 0.
-     *
-     */
     public Vector() {
         weights = new HashMap<>();
-        norm2 = -1.0;
     }
 
+    /**
+     * Read the weights for the token id into a map
+     */
     public void read(Integer[] tokenIds, Double[] weights) {
+        if (tokenIds.length != weights.length) {
+            throw new IllegalStateException("Arrays must be of same size.");
+        }
+
         for (int i = 0; i < tokenIds.length; i++) {
             this.weights.put(tokenIds[i] - 1, weights[i]);
         }
@@ -31,7 +33,7 @@ public class Vector {
     /**
      * Computes the euclidean norm of this vector which is geometrically the length of the vector.
      *
-     * @return euclidean norm / length of vector
+     * @return euclidean norm OR length of vector
      */
     private double norm() {
         double normQuad = weights.values().stream()
@@ -46,7 +48,7 @@ public class Vector {
         this.weights.put(index, weight);
     }
 
-    public double dotProduct(Vector other) {
+    private double dotProduct(Vector other) {
         double sum = 0;
         for (Map.Entry<Integer, Double> entry : other.weights.entrySet()) {
             int id = entry.getKey();
@@ -60,9 +62,18 @@ public class Vector {
         return sum;
     }
 
+    public double getCosineSimilarity(Vector other) {
+        double lnorm = other.getNorm2();
+        if (lnorm == 0.0) return 0.0;
+        double rnorm = this.getNorm2();
+        if (rnorm == 0.0) return 0.0;
+
+        return this.dotProduct(other) / (rnorm * lnorm);
+    }
+
 
     public double getNorm2() {
-        if (norm2 == -1.0) {
+        if (norm2 == null) {
             norm2 = norm();
         }
         return norm2;

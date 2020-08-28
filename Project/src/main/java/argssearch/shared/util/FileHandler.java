@@ -12,7 +12,7 @@ public class FileHandler {
         return streamToString(getResourceAsStream(relativeResource));
     }
 
-    public Stream<String> getResourceAsStringStream(final String relativeResource) throws IOException {
+    public Stream<String> getResourceAsStringStream(final String relativeResource) {
         return streamToStringStream(getResourceAsStream(relativeResource));
     }
 
@@ -30,14 +30,5 @@ public class FileHandler {
 
     public Stream<String> streamToStringStream(final InputStream is) {
         return new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8)).lines();
-    }
-
-    public static boolean validateFile(final File file, boolean isDir) {
-        return file != null && file.exists() && isDir ? file.isDirectory() : Objects.requireNonNull(file).isFile();
-    }
-
-    public static boolean validateFile(final String fileString, boolean isDir) {
-        File file = new File(fileString);
-        return file.exists() && isDir ? file.isDirectory() : file.isFile();
     }
 }

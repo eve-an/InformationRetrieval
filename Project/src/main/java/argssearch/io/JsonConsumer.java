@@ -47,7 +47,8 @@ class JsonConsumer implements Runnable {
                 db.save(dbPremise, dbArg);
             }
 
-            db.execBatch();
+            db.execBatch(); // Add Discussions to DB if there are some left
+            db.closeAll();
             logger.info("Copying temp data to original database.");
             ArgDB.getInstance().executeSqlFile("/database/scripts/insertion/temp/temp_constraints.sql");
             ArgDB.getInstance().dropSchema("temp");

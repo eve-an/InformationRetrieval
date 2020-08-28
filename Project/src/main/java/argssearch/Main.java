@@ -27,6 +27,7 @@ public class Main {
         Third Arg = Query Output path
     */
     public static void main(String[] args) throws IOException {
+        logger.debug("Main Args: " + String.join(" ", args));
         ArgumentParser argParser = new ArgumentParser();
         argParser
             .addStringArg("parameterRun", "pr", "Should a parameter run be performed (fromMultiplier:toMultiplier:stepSize) ie. (0:3:0.2)")

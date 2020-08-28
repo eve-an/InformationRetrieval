@@ -1,7 +1,8 @@
 package argssearch.io;
 
 import argssearch.shared.db.ArgDB;
-import argssearch.shared.db.SqlCodes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -11,6 +12,7 @@ import java.sql.SQLException;
  */
 class JsonDbUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(JsonDbUtil.class);
     private PreparedStatement insertSource;
     private PreparedStatement insertDiscussion;
     private PreparedStatement insertPremise;
@@ -37,7 +39,7 @@ class JsonDbUtil {
             insertSource.setString(1, source.getDomain());
             insertSource.executeUpdate();
         } catch (SQLException throwables) {
-            if (throwables.getSQLState().equals(SqlCodes.Key.duplicate)) {
+            if (throwables.getSQLState().equals("23505")) {  // Duplicate Key Error Code
                 return;
             }
             throw new RuntimeException(throwables.getMessage());
@@ -58,6 +60,8 @@ class JsonDbUtil {
 
         // From time to time we want our data to be saved in the database
         if (batchCounter == 1000) {
+            batchCounter = 0;
+            logger.debug("Add 1000 Discussions to Database.");
             execBatch();
         }
     }
@@ -80,15 +84,24 @@ class JsonDbUtil {
         }
     }
 
-
-
     public void execBatch() {
         try {
-            insertDiscussion.executeLargeBatch();
-            insertPremise.executeLargeBatch();
-            insertArgument.executeLargeBatch();
+            insertDiscussion.executeBatch();
+            insertPremise.executeBatch();
+            insertArgument.executeBatch();
         } catch (SQLException throwables) {
             throw new RuntimeException(throwables.getLocalizedMessage());
+        }
+    }
+
+    public void closeAll() {
+        try {
+            insertArgument.close();
+            insertPremise.close();
+            insertSource.close();
+            insertDiscussion.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
     }
 }

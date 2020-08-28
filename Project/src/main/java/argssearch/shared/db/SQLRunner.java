@@ -9,10 +9,9 @@ import java.util.regex.Pattern;
 
 public class SQLRunner {
 
-    final static Pattern sqlFunction = Pattern.compile("(?i)PROCEDURE|FUNCTION|(?i)LANGUAGE\\s*(?i)plpgsql;");
+    private final static Pattern sqlFunction = Pattern.compile("(?i)PROCEDURE|FUNCTION|(?i)LANGUAGE\\s*(?i)plpgsql;");
 
     public void run(final String relativeSQLPath) throws IOException, SQLException {
-
         String sql = new FileHandler().getResourceAsString(relativeSQLPath);
         Matcher m = sqlFunction.matcher(sql);
         // Procedures and functions have another syntax than the rest of the sql statements

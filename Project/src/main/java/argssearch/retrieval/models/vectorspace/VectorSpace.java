@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
  */
 public class VectorSpace {
     private static final Logger logger = LoggerFactory.getLogger(VectorSpace.class);
-
     private final Map<String, Integer> tokenMap;
 
     /**
@@ -45,7 +44,6 @@ public class VectorSpace {
     }
 
     private final CoreNlpService nlpService;
-    private final int vectorSize;
     private Vector queryVector;
 
     /**
@@ -53,8 +51,8 @@ public class VectorSpace {
      */
     public VectorSpace(CoreNlpService nlpService) {
         this.nlpService = nlpService;
-        vectorSize = ArgDB.getInstance().getRowCount("token");
         tokenMap = new HashMap<>();
+
         try {
             loadTokens();
         } catch (SQLException throwables) {
@@ -65,8 +63,25 @@ public class VectorSpace {
         if (ArgDB.getInstance().getRowCount("inverted_argument_index_view") == 0 ||
                 ArgDB.getInstance().getRowCount("inverted_premise_index_view") == 0 ||
                 ArgDB.getInstance().getRowCount("inverted_discussion_index_view") == 0) {
+            logger.debug("One of the index views is empty. A refresh must be executed.");
             ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
         }
+    }
+
+    /**
+     * In memory representation of Token table
+     */
+    private void loadTokens() throws SQLException {
+        logger.debug("Loading tokens for in memory representation.");
+        Statement stmt = ArgDB.getInstance().getStatement();
+        ResultSet rs = stmt.executeQuery("SELECT token, tid FROM token");
+
+        while (rs.next()) {
+            tokenMap.put(rs.getString(1), rs.getInt(2));
+        }
+
+        stmt.close();
+        rs.close();
     }
 
     /**
@@ -77,7 +92,6 @@ public class VectorSpace {
      */
     private void loadQuery(final String query) {
         queryVector = new Vector();
-
         List<String> tokens = nlpService.lemmatize(query);
         for (String token : tokens) {
             Integer id = tokenMap.get(token);
@@ -132,7 +146,6 @@ public class VectorSpace {
             result.setRank(rank++);
             //processResult(rArg, minRank, argMult, topic.getNumber(), Result.DocumentType.ARGUMENT);
         }
-
 
         logger.info("Finished retrieving. Results: {}", results.size());
         return results;
@@ -195,18 +208,6 @@ public class VectorSpace {
         return discussionArgsMap;
     }
 
-    private void loadTokens() throws SQLException {
-        Statement stmt = ArgDB.getInstance().getStatement();
-        ResultSet rs = stmt.executeQuery("SELECT token, tid FROM token");
-
-        while (rs.next()) {
-            tokenMap.put(rs.getString(1), rs.getInt(2));
-        }
-
-        stmt.close();
-        rs.close();
-    }
-
     private List<Result> processResult(final ResultSet rs, final double minRank, final double multiplier,
                                        final int topicNumber,
                                        final Result.DocumentType type) {
@@ -214,7 +215,6 @@ public class VectorSpace {
         int printResults = 0;
         try {
             while (rs.next()) {
-
                 if (printResults++ == 10000) {
                     printResults = 0;
                     logger.debug("Processed 10.000 Documents in " + type.name());
@@ -237,9 +237,10 @@ public class VectorSpace {
                 final Vector docVector = new Vector();
                 docVector.read(tokenIds, tokenWeights);
 
-                double sim = VectorMath.getCosineSimilarity(docVector, queryVector);
+                double sim = queryVector.getCosineSimilarity(docVector);
 
                 if (sim > minRank) {
+                    logger.debug("Retrieved Document '{}' - {}", docid, type.name());
                     retrieved.add(new Result(type, topicNumber, docid, 0, sim * multiplier));
                 }
             }

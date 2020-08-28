@@ -1,6 +1,5 @@
 package argssearch.shared.db;
 
-import argssearch.shared.exceptions.NoSQLResultException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,24 +179,6 @@ public class ArgDB {
             executeNativeSql(String.format("DELETE FROM %s", tableName));
         } catch (IOException ex) {
             ex.printStackTrace();   // TODO handle
-        }
-    }
-
-    public int getIndexOfTerm(String term) throws SQLException {
-        PreparedStatement ps = prepareStatement("SELECT tid FROM token WHERE token = ?");
-        ps.setString(1, term);
-
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                int index = rs.getInt(1);
-                rs.close();
-                return index;
-            } else {
-                rs.close();
-                throw new NoSQLResultException("Did not found an index for '" + term + "'");
-            }
-        } finally {
-            ps.close();
         }
     }
 
