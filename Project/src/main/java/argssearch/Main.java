@@ -20,11 +20,6 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws IOException, SQLException {
-        ArgDB.getInstance().dropSchema("public");
-        ArgDB.getInstance().dropSchema("temp");
-        ArgDB.getInstance().createSchema();
-        Acquisition.exec("/home/ivan/Documents/IR_JSONS/idebate.json", new LinkedBlockingDeque<>(16));
-        Indexer.index(new CoreNlpService(), TokenCachePool.getInstance().get(Integer.MAX_VALUE));
         TFIDFWeighter weighter = new TFIDFWeighter();
         weighter.weigh();
     }
