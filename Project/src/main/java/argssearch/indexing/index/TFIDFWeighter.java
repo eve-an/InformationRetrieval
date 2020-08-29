@@ -63,28 +63,40 @@ public class TFIDFWeighter {
         totalPremiseIndexCount = ArgDB.getInstance().getRowCount("premise_index");
     }
 
-    public void weigh() throws SQLException {
-        // Get for each index the corresponding token ids, the length of the document and the occurrences of the token in the document
-        logger.info("Start weighing the argument_index");
-        ResultSet argResult = ArgDB.getInstance().getStatement().executeQuery(argIndex);
-        process(argResult, psArgumentIndexUpdate, totalArgumentCount, totalArgumentIndexCount, getTokenOccurrences(tokenOccurenceArg));
-        argResult.close();
-        logger.info("Finished weighing the argument_index");
+    public void weigh() {
+        try {
+            // Get for each index the corresponding token ids, the length of the document and the occurrences of the token in the document
+            logger.info("Start weighing the argument_index");
+            ResultSet argResult = ArgDB.getInstance().getStatement().executeQuery(argIndex);
+            process(argResult, psArgumentIndexUpdate, totalArgumentCount, totalArgumentIndexCount,
+                getTokenOccurrences(tokenOccurenceArg));
+            argResult.close();
+            logger.info("Finished weighing the argument_index");
+        } catch (SQLException e) {
+            logger.error("Error when trying to weigh the argument_index", e);
+        }
 
-        logger.info("Start weighing the premise_index");
-        ResultSet premiseResult = ArgDB.getInstance().getStatement().executeQuery(premiseIndex);
-        process(premiseResult, psPremiseIndexUpdate, totalPremiseCount, totalPremiseIndexCount, getTokenOccurrences(tokenOccurencePremise));
-        premiseResult.close();
-        logger.info("Finished weighing the premise_index");
+        try {
+            logger.info("Start weighing the premise_index");
+            ResultSet premiseResult = ArgDB.getInstance().getStatement().executeQuery(premiseIndex);
+            process(premiseResult, psPremiseIndexUpdate, totalPremiseCount, totalPremiseIndexCount, getTokenOccurrences(tokenOccurencePremise));
+            premiseResult.close();
+            logger.info("Finished weighing the premise_index");
+        } catch (SQLException e) {
+            logger.error("Error when trying to weigh the premise_index", e);
+        }
 
+        try {
         logger.info("Start weighing the discussion_index");
         ResultSet discussionResult = ArgDB.getInstance().getStatement().executeQuery(discussionIndex);
         process(discussionResult, psDiscussionIndexUpdate, totalDiscussionCount, totalDiscussionIndexCount, getTokenOccurrences(tokenOccurenceDiscussion));
         discussionResult.close();
         logger.info("Finished weighing the discussion_index");
+        } catch (SQLException e) {
+            logger.error("Error when trying to weigh the discussion_index", e);
+        }
 
         logger.info("done");
-        psArgumentIndexUpdate.executeBatch();
     }
 
     public void process(final ResultSet rs,

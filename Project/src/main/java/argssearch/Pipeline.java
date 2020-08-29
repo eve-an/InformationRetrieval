@@ -11,6 +11,7 @@ import argssearch.retrieval.models.ModelType;
 import argssearch.retrieval.models.PhraseRetrieval;
 import argssearch.retrieval.models.PhraseRetrievalOnAllTables;
 import argssearch.retrieval.models.vectorspace.VectorSpace;
+import argssearch.shared.cache.TokenCache;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
@@ -33,13 +34,16 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Pipeline {
+public class Pipeline implements AutoCloseable {
 
     private static final Logger logger = LoggerFactory.getLogger(Pipeline.class);
 
     private Topic topic;                   // Query
     private final CoreNlpService nlpService;    // Language Processing
     private VectorSpace vs;
+    private ConjunctiveRetrievalOnAllTables conjunctiveRetrievalOnAllTable;
+    private DisjunctiveRetrievalOnAllTables disjunctiveRetrievalOnAllTable;
+    private PhraseRetrievalOnAllTables phraseRetrievalOnAllTables;
     /**
      * Use this when you have an empty Database and you want to fill it with the JSON-Data.
      *
@@ -50,37 +54,34 @@ public class Pipeline {
         this.topic = topic;
         nlpService = new CoreNlpService();
         vs = new VectorSpace(nlpService);
+        conjunctiveRetrievalOnAllTable = new ConjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
+        disjunctiveRetrievalOnAllTable = new DisjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
+        phraseRetrievalOnAllTables = new PhraseRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         if (skipReadingCrawl) return;
 
         // Make sure the temp schema is empty
         ArgDB.getInstance().dropSchema("temp");
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
-        try {
-            TFIDFWeighter weighter = new TFIDFWeighter();
-            weighter.weigh();
-        } catch(SQLException e) {
-            logger.error("Error weighing", e);
-        }
-
+        TFIDFWeighter weighter = new TFIDFWeighter();
+        weighter.weigh();
     }
 
     public Pipeline(final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         logger.debug("Creating pipeline with json-path=’{}’ and skipReadingCrawl='{}'", pathToJsonDir, skipReadingCrawl);
         nlpService = new CoreNlpService();
         vs = new VectorSpace(nlpService);
+        conjunctiveRetrievalOnAllTable = new ConjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
+        disjunctiveRetrievalOnAllTable = new DisjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
+        phraseRetrievalOnAllTables = new PhraseRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         if (skipReadingCrawl) return;
 
         // Make sure the temp schema is empty
         ArgDB.getInstance().dropSchema("temp");
         readIntoDatabase(pathToJsonDir);    // Read all Jsons to Database
         index(nlpService);      // Index all Documents
-        try {
-            TFIDFWeighter weighter = new TFIDFWeighter();
-            weighter.weigh();
-        } catch(SQLException e) {
-            logger.error("Error weighing", e);
-        }
+        TFIDFWeighter weighter = new TFIDFWeighter();
+        weighter.weigh();
     }
 
     public void setTopic(final Topic topic) {
@@ -98,12 +99,8 @@ public class Pipeline {
         // Which Retrieval Model do you want to use?
         switch (model) {
             case PHRASE:
-                var pr = new PhraseRetrievalOnAllTables(
-                        this.nlpService,
-                        TokenCachePool.getInstance().getDefault()
-                );
                 final List<Result> psResult = new LinkedList<>();
-                pr.execute(
+                phraseRetrievalOnAllTables.execute(
                         topic.getTitle(),
                         0,
                         0,
@@ -122,12 +119,8 @@ public class Pipeline {
                 results = psResult;
                 break;
             case BOOL_CONJUNCTIVE:
-                var bc = new ConjunctiveRetrievalOnAllTables(
-                        this.nlpService,
-                        TokenCachePool.getInstance().getDefault()
-                );
                 final List<Result> bcResult = new LinkedList<>();
-                bc.execute(
+                conjunctiveRetrievalOnAllTable.execute(
                         topic.getTitle(),
                         0,
                         0,
@@ -146,12 +139,8 @@ public class Pipeline {
                 results = bcResult;
                 break;
             case BOOL_DISJUNCTIVE:
-                var bd = new DisjunctiveRetrievalOnAllTables(
-                        this.nlpService,
-                        TokenCachePool.getInstance().getDefault()
-                );
                 final List<Result> bdResult = new LinkedList<>();
-                bd.execute(
+                disjunctiveRetrievalOnAllTable.execute(
                         topic.getTitle(),
                         0,
                         0,
@@ -344,5 +333,12 @@ public class Pipeline {
         ).values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void close() throws Exception {
+        phraseRetrievalOnAllTables.close();
+        conjunctiveRetrievalOnAllTable.close();
+        disjunctiveRetrievalOnAllTable.close();
     }
 }

@@ -45,7 +45,7 @@ public class XmlParser {
                 throw new RuntimeException("Could not parse number of Topic!");
             }
 
-            String title = getSingleNode(node, "title").getTextContent().trim();
+            String title = getSingleNode(node, "title").getTextContent().toLowerCase().trim();
             //String description = getSingleNode(node, "description").getTextContent().trim();
             //String narrative = getSingleNode(node, "narrative").getTextContent().trim();
 

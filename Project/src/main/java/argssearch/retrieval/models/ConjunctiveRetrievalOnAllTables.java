@@ -19,7 +19,7 @@ public class ConjunctiveRetrievalOnAllTables {
 
     public ConjunctiveRetrievalOnAllTables(CoreNlpService nlpService, TokenCache cache) {
         this.query = ArgDB.getInstance().prepareStatement(
-                "SELECT end_t.crawlID AS doc, DENSE_RANK() over (ORDER BY SUM(sumW),argid) AS rank, SUM(sumW) as score " +
+                "SELECT end_t.crawlID AS doc, DENSE_RANK() over (ORDER BY SUM(sumW) DESC, argid DESC) AS rank, SUM(sumW) as score " +
                         "FROM " +
                         "( " +
                         "    SELECT t_arg.crawlID, content, ispro, argID, t_arg.pID, dID, sumW, tid_matches, occurrence_count " +
@@ -136,5 +136,9 @@ public class ConjunctiveRetrievalOnAllTables {
             System.out.println(sqlE.getMessage());
             sqlE.printStackTrace();
         }
+    }
+
+    public void close() throws Exception{
+        this.query.close();
     }
 }

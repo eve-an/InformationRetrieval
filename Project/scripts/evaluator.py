@@ -28,7 +28,6 @@ def main():
 
 
 def singleMulti(result, diagramOutputDir):
-    print(result)
     for modelName in result:
         objects = [name[:-4] for name in result[modelName].keys()]
         y_pos = np.arange(len(objects))
@@ -51,7 +50,7 @@ def parameterRun(result, diagramOutputDir, maxCount=None):
         count = len(result[modelName])
         if maxCount:
             count = maxCount
-        for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1])[:count]:
+        for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1])[:min(count, len(result[modelName]))]:
             print(k, v)
         print('-------------------------------------------------------------')
 

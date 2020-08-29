@@ -7,23 +7,30 @@ def collect(qrelsFilePath, baseDir):
     qrels = TrecQrel(qrelsFilePath)
 
     result = {}
-    topic_path_name = _getDirectoryContent(baseDir, directory=True)
-
-    for topicPath, _ in topic_path_name:
+    for i, [topicPath, topicNum] in enumerate(sorted(_getDirectoryContent(baseDir, directory=True), key=lambda a_b: int(a_b[1]))):
         for modelPath, modelName in _getDirectoryContent(topicPath, directory=True):
             if modelName not in result:
                 result[modelName] = {}
 
             for filePath, fileName in _getDirectoryContent(modelPath, file=True):
-                run = TrecRun(filePath)
-                runResult = run.evaluate_run(qrels, True)
-                rs = list(runResult.get_results_for_metric('P_10').values())
-                score = np.mean(rs)
+                score = 0
+
+                # only evaluate non empty files
+                if os.path.getsize(filePath) > 0:
+                    run = TrecRun(filePath)
+                    runResult = run.evaluate_run(qrels, True)
+                    rs = list(runResult.get_results_for_metric(
+                        'P_10').values())
+                    score = np.mean(rs)
 
                 if fileName not in result[modelName]:
                     result[modelName][fileName] = [score]
                 else:
                     result[modelName][fileName].append(score)
+            print("Finished processing model {} of topic {}".format(
+                modelName, topicNum))
+        print("Finished processing topic: ", topicNum)
+
     # Calculate average over all topics
     for modelName in result:
         for comparisonName in result[modelName]:

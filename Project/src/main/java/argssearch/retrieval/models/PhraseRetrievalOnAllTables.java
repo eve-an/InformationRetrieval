@@ -19,7 +19,7 @@ public class PhraseRetrievalOnAllTables {
 
     public PhraseRetrievalOnAllTables(CoreNlpService nlpService, TokenCache cache) {
         this.query = ArgDB.getInstance().prepareStatement(
-                "SELECT end_t.crawlID AS doc, DENSE_RANK() over (ORDER BY SUM(weightSum),argid) AS rank, SUM(weightSum) as score " +
+                "SELECT end_t.crawlID AS doc, DENSE_RANK() over (ORDER BY SUM(weightSum) DESC,argid DESC) AS rank, SUM(weightSum) as score " +
                         "FROM " +
                         "( " +
                         "    SELECT t_arg.crawlID, content, ispro, argID, t_arg.pID, dID, phraseMatches, weightSum " +
@@ -164,5 +164,9 @@ public class PhraseRetrievalOnAllTables {
             System.out.println(sqlE.getMessage());
             sqlE.printStackTrace();
         }
+    }
+
+    public void close() throws Exception{
+        this.query.close();
     }
 }
