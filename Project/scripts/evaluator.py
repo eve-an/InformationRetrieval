@@ -36,7 +36,7 @@ def singleMulti(result, diagramOutputDir):
 
         plt.bar(y_pos, performance, align='center', alpha=0.5)
         plt.xticks(y_pos, objects)
-        plt.ylabel('NDCG')
+        plt.ylabel('NDCG@10')
         plt.title('Retrieval Models')
 
         plt.savefig(os.path.join(diagramOutputDir,
@@ -50,8 +50,12 @@ def parameterRun(result, diagramOutputDir, maxCount=None):
         count = len(result[modelName])
         if maxCount:
             count = maxCount
-        for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1])[:min(count, len(result[modelName]))]:
-            print(k, v)
+        if not os.path.isdir(diagramOutputDir):
+            os.mkdir(diagramOutputDir)
+        with open(os.path.join(diagramOutputDir, modelName + '.txt'), 'w') as f:
+            for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1])[:min(count, len(result[modelName]))]:
+                print(k, v)
+                f.write("{} {}\n".format(k, v))
         print('-------------------------------------------------------------')
 
 

@@ -159,7 +159,6 @@ public class Pipeline implements AutoCloseable {
                 results = bdResult;
                 break;
             case VECTOR_SPACE:
-                ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
                 results = queryVectorSpace(topic,
                         0.1,
                         nlpService,

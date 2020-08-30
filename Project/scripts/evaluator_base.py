@@ -9,6 +9,7 @@ def collect(qrelsFilePath, baseDir):
     result = {}
     for i, [topicPath, topicNum] in enumerate(sorted(_getDirectoryContent(baseDir, directory=True), key=lambda a_b: int(a_b[1]))):
         for modelPath, modelName in _getDirectoryContent(topicPath, directory=True):
+            modelName = modelName[:-4]
             if modelName not in result:
                 result[modelName] = {}
 
