@@ -53,7 +53,7 @@ def parameterRun(result, diagramOutputDir, maxCount=None):
         if not os.path.isdir(diagramOutputDir):
             os.mkdir(diagramOutputDir)
         with open(os.path.join(diagramOutputDir, modelName + '.txt'), 'w') as f:
-            for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1])[:min(count, len(result[modelName]))]:
+            for k, v in sorted(result[modelName].items(), key=lambda k_v: k_v[1], reverse=True)[:min(count, len(result[modelName]))]:
                 print(k, v)
                 f.write("{} {}\n".format(k, v))
         print('-------------------------------------------------------------')
