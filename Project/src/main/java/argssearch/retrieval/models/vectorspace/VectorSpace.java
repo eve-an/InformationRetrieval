@@ -20,8 +20,8 @@ public class VectorSpace {
     private static final Logger logger = LoggerFactory.getLogger(VectorSpace.class);
 
     private Map<String, Integer> tokenMap;
-    private Map<DocumentType, List<IndexRepresentation>> invertedIndex;
-    private Map<DocumentType, List<Result>> baseResults;
+    private final Map<DocumentType, List<IndexRepresentation>> invertedIndex;
+    private final Map<DocumentType, List<Result>> baseResults;
 
     private final CoreNlpService nlpService;
     private Vector queryVector;
@@ -31,7 +31,6 @@ public class VectorSpace {
 
     /**
      * @param nlpService {@link CoreNlpService}
-     * @param minRank
      */
     public VectorSpace(CoreNlpService nlpService, double minRank) {
         this.nlpService = nlpService;
@@ -49,6 +48,7 @@ public class VectorSpace {
      * @param query query as String
      */
     private void loadQuery(final String query) {
+        logger.debug("Loading Query");
         queryVector = new Vector();
         List<String> tokens = nlpService.lemmatize(query);
         for (String token : tokens) {
@@ -59,47 +59,75 @@ public class VectorSpace {
         }
     }
 
-    public static void main(String[] args) throws IOException, SQLException {
-        VectorSpace vs = new VectorSpace(new CoreNlpService(), 0.4);
-        vs.query(new Topic(1, "Smoking illegal", "", ""), 0.4, 1, 1, 1).forEach(System.out::println);
-        vs.query(new Topic(1, "Should teachers get tenure?", "", ""), 0.4, 1, 1, 1).forEach(System.out::println);
-
-    }
-
-    public List<Result> query(final Topic topic, final double minRank, final double discMult,
+    /**
+     * Executes a query.
+     * <p>
+     * Load for each new Topic a new Query Vector and a new Base Result.
+     * The Base Result is the clean Vector Space query without the multipliers.
+     * Each run new multipliers are multiplied to the score of the retrieved arguments.
+     * <p>
+     * Arguments which are retrieved from Discussions and Premises will be added to the final List.
+     * Therefore we have duplicates in this list and we can group by their ids and sum up their score
+     * to empathize the importance of Discussions and Premises.
+     */
+    public List<Result> query(final Topic topic, final double discMult,
                               final double premiseMult, final double argMult) throws SQLException {
-        // Load only current query
+        // Load only current query.
+        // When a new Topic is loaded the base results will be cleared and loaded again.
         if (currentTopic == null || !currentTopic.getTitle().equals(topic.getTitle())) {
+            logger.debug("New Query: " + topic.getTitle());
             currentTopic = topic;
             loadQuery(topic.getTitle());
             if (queryVector.isEmpty()) {
                 logger.warn("Did not found any tokens to query " + topic.getTitle());
                 return new ArrayList<>();
             }
+
             baseResults.clear();
+            logger.debug("Loading Base results.");
             for (DocumentType type : DocumentType.values()) {
                 baseResults.put(type, queryOverIndex(invertedIndex.get(type), type));
             }
         }
 
-        List<Result> results = new ArrayList<>();
-        results.addAll(addMultiplier(baseResults.get(DocumentType.ARGUMENT), argMult));
-        results.addAll(retrieveArguments(addMultiplier(baseResults.get(DocumentType.PREMISE), premiseMult), DocumentType.PREMISE));
-        results.addAll(retrieveArguments(addMultiplier(baseResults.get(DocumentType.DISCUSSION), discMult), DocumentType.DISCUSSION));
+        // Copy Base results and apply multiplier
+        Map<DocumentType, List<Result>> baseCopy = new HashMap<>();
+        for (Map.Entry<DocumentType, List<Result>> entry : baseResults.entrySet()) {
+                List<Result> clone = entry.getValue().stream()
+                        .map(Result::copyResult)
+                        .collect(Collectors.toList());
+                baseCopy.put(entry.getKey(), clone);
+        }
+
+        baseCopy.get(DocumentType.ARGUMENT).forEach(arg -> arg.setScore(arg.getScore() * argMult));
+        baseCopy.get(DocumentType.PREMISE).forEach(prem -> prem.setScore(prem.getScore() * premiseMult));
+        baseCopy.get(DocumentType.DISCUSSION).forEach(disc -> disc.setScore(disc.getScore() * discMult));
+
+        logger.debug("Retrieve Arguments");
+        List<Result> results = new ArrayList<>();   // All Arguments
+
+        // keep arguments with multiplier
+        results.addAll(baseCopy.get(DocumentType.ARGUMENT));
+        // multiply multiplier and retrieve arguments which belong to the discussion or premise
+        results.addAll(retrieveArguments(baseCopy.get(DocumentType.PREMISE), DocumentType.PREMISE));
+        results.addAll(retrieveArguments(baseCopy.get(DocumentType.DISCUSSION), DocumentType.DISCUSSION));
+
+        // Group by Argument ids
+        List<Result> args = results.stream()
+                .collect(Collectors.groupingBy(Result::getDocumentId, Collectors.summingDouble(Result::getScore)))
+                .entrySet()
+                .stream()
+                .map(entry -> new Result(DocumentType.ARGUMENT, topic.getNumber(), entry.getKey(), 0, entry.getValue()))
+                .sorted()
+                .collect(Collectors.toList());
 
 
-        Map<String, Double> argResultsWithRank = results.stream()
-                .collect(Collectors.groupingBy(Result::getDocumentId, Collectors.summingDouble(Result::getScore)));
+        for (int i = 0; i < args.size(); i++) {
+            args.get(i).setRank(i + 1);
+        }
 
-        results.forEach(result -> result.setScore(argResultsWithRank.get(result.getDocumentId())));
-        Collections.sort(results);
-        return results;
-    }
-
-    private List<Result> addMultiplier(List<Result> results, double multiplier) {
-        List<Result> multiplied = List.copyOf(results);
-        multiplied.forEach(result -> result.setScore(result.getScore() * multiplier));
-        return multiplied;
+        logger.debug("Found {} arguments.", args.size());
+        return args;
     }
 
     private List<Result> queryOverIndex(List<IndexRepresentation> indexList, DocumentType type) {
@@ -115,6 +143,9 @@ public class VectorSpace {
         return results;
     }
 
+    /**
+     * Retrieve Arguments from Premises and Discussions.
+     */
     private List<Result> retrieveArguments(List<Result> results, DocumentType type) {
         List<Result> arguments = new ArrayList<>();
 
@@ -123,19 +154,32 @@ public class VectorSpace {
                     .filter(base -> {
                         String argId = base.getDocumentId();
                         if (type == DocumentType.DISCUSSION) {
-                            argId = argId.substring(0, argId.indexOf("-") - 1);
+                            argId = argId.substring(0, argId.indexOf("-") - 1); // Discussion-Id = First part of Argid
                         }
                         return result.getDocumentId().equals(argId);
                     })
+                    .map(Result::copyResult)
                     .collect(Collectors.toList());
+
+            args.forEach(arg -> arg.setScore(arg.getScore() * result.getScore()));
             arguments.addAll(args);
         }
-
         return arguments;
+    }
+
+    private List<Result> copyResults(List<Result> results) {
+        List<Result> copy = new ArrayList<>();
+
+        for (Result result : results) {
+            copy.add(result.copyResult());
+        }
+
+        return copy;
     }
 
 
     private void loadTokenMap() {
+        logger.debug("Loading Token map into memory.");
         // refresh materialized views when they are empty
         if (ArgDB.getInstance().getRowCount("inverted_argument_index_view") == 0 ||
                 ArgDB.getInstance().getRowCount("inverted_premise_index_view") == 0 ||
@@ -148,6 +192,8 @@ public class VectorSpace {
     }
 
     private void loadIndexRepresentations() {
+        logger.debug("Loading indexes maps into memory.");
+
         var argumentIndex = IndexLoader.load("inverted_argument_index_view", DocumentType.ARGUMENT);
         var premiseIndex = IndexLoader.load("inverted_premise_index_view", DocumentType.PREMISE);
         var discussionIndex = IndexLoader.load("inverted_discussion_index_view", DocumentType.DISCUSSION);
@@ -155,10 +201,5 @@ public class VectorSpace {
         invertedIndex.put(DocumentType.ARGUMENT, argumentIndex);
         invertedIndex.put(DocumentType.PREMISE, premiseIndex);
         invertedIndex.put(DocumentType.DISCUSSION, discussionIndex);
-    }
-
-
-    public void setMinRank(double minRank) {
-        this.minRank = minRank;
     }
 }

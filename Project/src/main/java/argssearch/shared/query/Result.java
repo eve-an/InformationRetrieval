@@ -8,13 +8,13 @@ import java.util.StringJoiner;
  * Class to represent the Result of a query. It follows the TREC format as stated here:
  * https://events.webis.de/touche-20/shared-task-1.html#submission
  */
-public class Result implements Comparable<Result> {
+public class Result implements Comparable<Result>, Cloneable {
 
     public enum DocumentType {
         ARGUMENT, PREMISE, DISCUSSION
     }
 
-    private final DocumentType type;
+    private DocumentType type;
     private final int topicNumber;
     private final String unusedField = "Q0";
     private final String documentId;
@@ -79,6 +79,10 @@ public class Result implements Comparable<Result> {
                 documentId.equals(result.documentId);
     }
 
+    public Result copyResult() {
+        return new Result(type, topicNumber, documentId, rank, score);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(type, documentId);
@@ -100,6 +104,13 @@ public class Result implements Comparable<Result> {
      */
     public String toTREC() {
         return String.format("%d %s %s %d %.2f %s", topicNumber, unusedField, documentId, rank, score, group);
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        Result result = (Result) super.clone();
+        result.score = this.score;
+        return result;
     }
 
     @Override

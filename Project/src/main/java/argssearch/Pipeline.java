@@ -52,7 +52,7 @@ public class Pipeline implements AutoCloseable {
     public Pipeline(final Topic topic, final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
-        vs = new VectorSpace(nlpService, 0);
+        vs = new VectorSpace(nlpService, 0.5);
         conjunctiveRetrievalOnAllTable = new ConjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         disjunctiveRetrievalOnAllTable = new DisjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         phraseRetrievalOnAllTables = new PhraseRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
@@ -69,7 +69,7 @@ public class Pipeline implements AutoCloseable {
     public Pipeline(final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         logger.debug("Creating pipeline with json-path=’{}’ and skipReadingCrawl='{}'", pathToJsonDir, skipReadingCrawl);
         nlpService = new CoreNlpService();
-        vs = new VectorSpace(nlpService, 0);
+        vs = new VectorSpace(nlpService, 0.5);
         conjunctiveRetrievalOnAllTable = new ConjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         disjunctiveRetrievalOnAllTable = new DisjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         phraseRetrievalOnAllTables = new PhraseRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
@@ -158,10 +158,7 @@ public class Pipeline implements AutoCloseable {
                 results = bdResult;
                 break;
             case VECTOR_SPACE:
-                ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
                 results = queryVectorSpace(topic,
-                        0.1,
-                        nlpService,
                         discussionMultiplier,
                         premiseMultiplier,
                         argumentMultiplier);
@@ -290,13 +287,11 @@ public class Pipeline implements AutoCloseable {
      * Documents are ordered according to their score in descending order.
      *
      * @param query      query to process with VSM
-     * @param minRank    Documents with a rank which is smaller than minRank will not be returned
-     * @param nlpService to get the lemmatized query
      */
-    private List<Result> queryVectorSpace(final Topic query, final double minRank, final CoreNlpService nlpService,
+    private List<Result> queryVectorSpace(final Topic query,
                                           final double discMult,
                                           final double premiseMult, final double argMult) throws SQLException {
-        return vs.query(query, minRank, discMult, premiseMult, argMult);
+        return vs.query(query, discMult, premiseMult, argMult);
     }
 
     /**
@@ -320,7 +315,7 @@ public class Pipeline implements AutoCloseable {
         if (table instanceof DiscussionIndexTable) t = DocumentType.DISCUSSION;
         if (table instanceof PremiseIndexTable) t = DocumentType.PREMISE;
 
-        final DocumentType finalT = t;
+        final DocumentType finalT = t;  //TODO Implement SingleRun
         return null;
     }
 

@@ -28,5 +28,6 @@ public class Main {
         Third Arg = Query Output path
     */
     public static void main(String[] args) throws IOException {
+        ParameterRunExecutor.MultiplierRun("/home/ivan", "/home/ivan/test", true, 0.0, 3.0, 0.5);
     }
 }
