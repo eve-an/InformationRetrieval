@@ -11,7 +11,6 @@ import argssearch.retrieval.models.ModelType;
 import argssearch.retrieval.models.PhraseRetrieval;
 import argssearch.retrieval.models.PhraseRetrievalOnAllTables;
 import argssearch.retrieval.models.vectorspace.VectorSpace;
-import argssearch.shared.cache.TokenCache;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.AbstractIndexTable;
 import argssearch.shared.db.ArgDB;
@@ -53,7 +52,7 @@ public class Pipeline implements AutoCloseable {
     public Pipeline(final Topic topic, final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         this.topic = topic;
         nlpService = new CoreNlpService();
-        vs = new VectorSpace(nlpService);
+        vs = new VectorSpace(nlpService, 0);
         conjunctiveRetrievalOnAllTable = new ConjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         disjunctiveRetrievalOnAllTable = new DisjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         phraseRetrievalOnAllTables = new PhraseRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
@@ -70,7 +69,7 @@ public class Pipeline implements AutoCloseable {
     public Pipeline(final String pathToJsonDir, boolean skipReadingCrawl) throws IOException {
         logger.debug("Creating pipeline with json-path=’{}’ and skipReadingCrawl='{}'", pathToJsonDir, skipReadingCrawl);
         nlpService = new CoreNlpService();
-        vs = new VectorSpace(nlpService);
+        vs = new VectorSpace(nlpService, 0);
         conjunctiveRetrievalOnAllTable = new ConjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         disjunctiveRetrievalOnAllTable = new DisjunctiveRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
         phraseRetrievalOnAllTables = new PhraseRetrievalOnAllTables(nlpService, TokenCachePool.getInstance().getDefault());
@@ -322,17 +321,7 @@ public class Pipeline implements AutoCloseable {
         if (table instanceof PremiseIndexTable) t = DocumentType.PREMISE;
 
         final DocumentType finalT = t;
-        return vs.retrieveArgumentsFromType(
-                t,
-                minRank,
-                1,
-                topic.getNumber(),
-                vs.query(query, minRank, discMult, premiseMult, argMult).stream()
-                        .filter(r -> r.getType() == finalT)
-                        .collect(Collectors.toList())
-        ).values().stream()
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+        return null;
     }
 
     @Override

@@ -8,9 +8,9 @@ import argssearch.shared.query.Topic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -18,70 +18,28 @@ import java.util.stream.Collectors;
  */
 public class VectorSpace {
     private static final Logger logger = LoggerFactory.getLogger(VectorSpace.class);
-    private final Map<String, Integer> tokenMap;
 
-    /**
-     * SQL queries to get the index of documents in the form of
-     * doc_id | token_ids | weights_of_tokens
-     */
-    static class Query {
-        final static String argument = "SELECT * FROM inverted_argument_index_view";
-        final static String filteredArgument = "SELECT * FROM inverted_argument_index_view WHERE crawlid IN ($)";
-        final static String discussion = "SELECT * FROM inverted_discussion_index_view";
-        final static String premise = "SELECT * FROM inverted_premise_index_view";
-
-        final static String retrieveArgumentsFromDiscussion = "SELECT a.crawlid FROM discussion d " +
-                "JOIN premise p on d.did = p.did " +
-                "JOIN argument a on p.pid = a.pid " +
-                "WHERE d.crawlid = ?;";
-
-        final static String retrieveArgumentsFromPremise = "SELECT * FROM premise p " +
-                "JOIN argument a on p.pid = a.pid " +
-                "WHERE p.crawlid = ?";
-
-        final static String retrieveArgumentsFromArgument = "SELECT * FROM argument " +
-                "WHERE crawlid = ?";
-    }
+    private Map<String, Integer> tokenMap;
+    private Map<DocumentType, List<IndexRepresentation>> invertedIndex;
+    private Map<DocumentType, List<Result>> baseResults;
 
     private final CoreNlpService nlpService;
     private Vector queryVector;
+    private Topic currentTopic;
+    private double minRank;
+
 
     /**
      * @param nlpService {@link CoreNlpService}
+     * @param minRank
      */
-    public VectorSpace(CoreNlpService nlpService) {
+    public VectorSpace(CoreNlpService nlpService, double minRank) {
         this.nlpService = nlpService;
-        tokenMap = new HashMap<>();
-
-        try {
-            loadTokens();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        // refresh materialized views when they are empty
-        if (ArgDB.getInstance().getRowCount("inverted_argument_index_view") == 0 ||
-                ArgDB.getInstance().getRowCount("inverted_premise_index_view") == 0 ||
-                ArgDB.getInstance().getRowCount("inverted_discussion_index_view") == 0) {
-            logger.debug("One of the index views is empty. A refresh must be executed.");
-            ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
-        }
-    }
-
-    /**
-     * In memory representation of Token table
-     */
-    private void loadTokens() throws SQLException {
-        logger.debug("Loading tokens for in memory representation.");
-        Statement stmt = ArgDB.getInstance().getStatement();
-        ResultSet rs = stmt.executeQuery("SELECT token, tid FROM token");
-
-        while (rs.next()) {
-            tokenMap.put(rs.getString(1), rs.getInt(2));
-        }
-
-        stmt.close();
-        rs.close();
+        this.minRank = minRank;
+        baseResults = new HashMap<>();
+        invertedIndex = new HashMap<>();
+        loadTokenMap();
+        loadIndexRepresentations();
     }
 
     /**
@@ -101,155 +59,106 @@ public class VectorSpace {
         }
     }
 
+    public static void main(String[] args) throws IOException, SQLException {
+        VectorSpace vs = new VectorSpace(new CoreNlpService(), 0.4);
+        vs.query(new Topic(1, "Smoking illegal", "", ""), 0.4, 1, 1, 1).forEach(System.out::println);
+        vs.query(new Topic(1, "Should teachers get tenure?", "", ""), 0.4, 1, 1, 1).forEach(System.out::println);
+
+    }
+
     public List<Result> query(final Topic topic, final double minRank, final double discMult,
                               final double premiseMult, final double argMult) throws SQLException {
-        logger.info("Start retrieving documents with query '{}'", topic.getTitle());
-        loadQuery(topic.getTitle());
-
-        Statement aStmt = ArgDB.getInstance().getStatement();
-        Statement pStmt = ArgDB.getInstance().getStatement();
-        Statement dStmt = ArgDB.getInstance().getStatement();
-
-        ResultSet rArg = aStmt.executeQuery(Query.argument);
-        ResultSet rPrem = pStmt.executeQuery(Query.premise);
-        ResultSet rDisc = dStmt.executeQuery(Query.discussion);
-
-        ExecutorService executor = Executors.newCachedThreadPool();
-
-        List<Callable<List<Result>>> calls = new ArrayList<>();
-        calls.add(() -> processResult(rArg, minRank, argMult, topic.getNumber(), Result.DocumentType.ARGUMENT));
-        calls.add(() -> processResult(rPrem, minRank, premiseMult, topic.getNumber(), Result.DocumentType.PREMISE));
-        calls.add(() -> processResult(rDisc, minRank, discMult, topic.getNumber(), Result.DocumentType.DISCUSSION));
+        // Load only current query
+        if (currentTopic == null || !currentTopic.getTitle().equals(topic.getTitle())) {
+            currentTopic = topic;
+            loadQuery(topic.getTitle());
+            if (queryVector.isEmpty()) {
+                logger.warn("Did not found any tokens to query " + topic.getTitle());
+                return new ArrayList<>();
+            }
+            baseResults.clear();
+            for (DocumentType type : DocumentType.values()) {
+                baseResults.put(type, queryOverIndex(invertedIndex.get(type), type));
+            }
+        }
 
         List<Result> results = new ArrayList<>();
-        try {
-            var futures = executor.invokeAll(calls);
-            for (Future<List<Result>> future : futures) {
-                results.addAll(future.get());
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            // Ignore
-        }
+        results.addAll(addMultiplier(baseResults.get(DocumentType.ARGUMENT), argMult));
+        results.addAll(retrieveArguments(addMultiplier(baseResults.get(DocumentType.PREMISE), premiseMult), DocumentType.PREMISE));
+        results.addAll(retrieveArguments(addMultiplier(baseResults.get(DocumentType.DISCUSSION), discMult), DocumentType.DISCUSSION));
 
-        executor.shutdown();
 
-        aStmt.close();
-        pStmt.close();
-        dStmt.close();
+        Map<String, Double> argResultsWithRank = results.stream()
+                .collect(Collectors.groupingBy(Result::getDocumentId, Collectors.summingDouble(Result::getScore)));
 
+        results.forEach(result -> result.setScore(argResultsWithRank.get(result.getDocumentId())));
         Collections.sort(results);
-
-        int rank = 1;
-        for (Result result : results) {
-            result.setRank(rank++);
-            //processResult(rArg, minRank, argMult, topic.getNumber(), Result.DocumentType.ARGUMENT);
-        }
-
-        logger.info("Finished retrieving. Results: {}", results.size());
         return results;
     }
 
-    public Map<Result, List<Result>> retrieveArgumentsFromType(
-            final DocumentType type,
-            final double minRank,
-            final double multiplier,
-            final int topicNumber,
-            final List<Result> results) {
-        Map<Result, List<Result>> discussionArgsMap = new HashMap<>();
-
-        String query = "";
-        switch (type) {
-            case ARGUMENT:
-                query = Query.retrieveArgumentsFromArgument;
-                break;
-            case PREMISE:
-                query = Query.retrieveArgumentsFromPremise;
-                break;
-            case DISCUSSION:
-                query = Query.retrieveArgumentsFromDiscussion;
-                break;
-        }
-
-        PreparedStatement ps = ArgDB.getInstance().prepareStatement(query);
-        if (results.stream().anyMatch(r -> r.getType() == type)) {
-            List<Result> filteredResults = results.stream()
-                    .distinct()
-                    .filter(r -> r.getType() == type)
-                    .collect(Collectors.toList());
-
-            for (Result result : filteredResults) {
-                try {
-                    ps.setString(1, result.getDocumentId());
-
-                    ResultSet rs = ps.executeQuery();
-                    List<String> argIds = new ArrayList<>();
-
-                    while (rs.next()) {
-                        argIds.add("'" + rs.getString(1) + "'");
-                    }
-
-                    rs.close();
-
-                    String argumentIndexQuery = Query.filteredArgument.replace("$", String.join(",", argIds));
-                    Statement stmt = ArgDB.getInstance().getStatement();
-
-                    List<Result> args = processResult(stmt.executeQuery(argumentIndexQuery), minRank, multiplier,
-                            topicNumber, Result.DocumentType.ARGUMENT);
-                    discussionArgsMap.put(result, args);
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
-            }
-
-        }
-
-        return discussionArgsMap;
+    private List<Result> addMultiplier(List<Result> results, double multiplier) {
+        List<Result> multiplied = List.copyOf(results);
+        multiplied.forEach(result -> result.setScore(result.getScore() * multiplier));
+        return multiplied;
     }
 
-    private List<Result> processResult(final ResultSet rs, final double minRank, final double multiplier,
-                                       final int topicNumber,
-                                       final Result.DocumentType type) {
-        List<Result> retrieved = new ArrayList<>();
-        int printResults = 0;
-        try {
-            while (rs.next()) {
-                if (printResults++ == 10000) {
-                    printResults = 0;
-                    logger.debug("Processed 10.000 Documents in " + type.name());
-                }
+    private List<Result> queryOverIndex(List<IndexRepresentation> indexList, DocumentType type) {
+        List<Result> results = new ArrayList<>();
 
-                final String docid = rs.getString(1);
-                Array sTokenIds = rs.getArray(2);
-                Array sTokenWeights = rs.getArray(3);
-
-                final Integer[] tokenIds = (Integer[]) sTokenIds.getArray();
-                final Double[] tokenWeights = (Double[]) sTokenWeights.getArray();
-
-                sTokenIds.free();
-                sTokenWeights.free();
-
-                if (tokenIds[0] == null || tokenWeights[0] == null) {
-                    continue;
-                }
-
-                final Vector docVector = new Vector();
-                docVector.read(tokenIds, tokenWeights);
-
-                double sim = queryVector.getCosineSimilarity(docVector);
-
-                if (sim > minRank) {
-                    logger.debug("Retrieved Document '{}' - {}", docid, type.name());
-                    retrieved.add(new Result(type, topicNumber, docid, 0, sim * multiplier));
-                }
+        indexList.forEach(index -> {
+            double sim = queryVector.getCosineSimilarity(index.toVector());
+            if (sim >= minRank) {
+                results.add(new Result(type, currentTopic.getNumber(), index.getCrawlId(), 0, sim));
             }
+        });
 
-            rs.close();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        return results;
+    }
+
+    private List<Result> retrieveArguments(List<Result> results, DocumentType type) {
+        List<Result> arguments = new ArrayList<>();
+
+        for (Result result : results) {
+            List<Result> args = baseResults.get(DocumentType.ARGUMENT).stream()
+                    .filter(base -> {
+                        String argId = base.getDocumentId();
+                        if (type == DocumentType.DISCUSSION) {
+                            argId = argId.substring(0, argId.indexOf("-") - 1);
+                        }
+                        return result.getDocumentId().equals(argId);
+                    })
+                    .collect(Collectors.toList());
+            arguments.addAll(args);
         }
 
-        return retrieved;
+        return arguments;
+    }
+
+
+    private void loadTokenMap() {
+        // refresh materialized views when they are empty
+        if (ArgDB.getInstance().getRowCount("inverted_argument_index_view") == 0 ||
+                ArgDB.getInstance().getRowCount("inverted_premise_index_view") == 0 ||
+                ArgDB.getInstance().getRowCount("inverted_discussion_index_view") == 0) {
+            logger.debug("One of the index views is empty. A refresh must be executed.");
+            ArgDB.getInstance().executeSqlFile("/database/scripts/refresh_views.sql");
+        }
+
+        tokenMap = IndexLoader.loadTokenMap();
+    }
+
+    private void loadIndexRepresentations() {
+        var argumentIndex = IndexLoader.load("inverted_argument_index_view", DocumentType.ARGUMENT);
+        var premiseIndex = IndexLoader.load("inverted_premise_index_view", DocumentType.PREMISE);
+        var discussionIndex = IndexLoader.load("inverted_discussion_index_view", DocumentType.DISCUSSION);
+
+        invertedIndex.put(DocumentType.ARGUMENT, argumentIndex);
+        invertedIndex.put(DocumentType.PREMISE, premiseIndex);
+        invertedIndex.put(DocumentType.DISCUSSION, discussionIndex);
+    }
+
+
+    public void setMinRank(double minRank) {
+        this.minRank = minRank;
     }
 }

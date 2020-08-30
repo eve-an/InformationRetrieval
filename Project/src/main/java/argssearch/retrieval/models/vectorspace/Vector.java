@@ -17,6 +17,10 @@ public class Vector {
         weights = new HashMap<>();
     }
 
+    public Vector(Map<Integer, Double> weights) {
+        this.weights = weights;
+    }
+
     /**
      * Read the weights for the token id into a map
      */
@@ -69,6 +73,10 @@ public class Vector {
         if (rnorm == 0.0) return 0.0;
 
         return this.dotProduct(other) / (rnorm * lnorm);
+    }
+
+    public boolean isEmpty() {
+        return weights.isEmpty();
     }
 
 

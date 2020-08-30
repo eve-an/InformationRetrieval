@@ -4,6 +4,7 @@ package argssearch;
 import argssearch.indexing.index.Indexer;
 import argssearch.indexing.index.TFIDFWeighter;
 import argssearch.io.Acquisition;
+import argssearch.retrieval.models.vectorspace.IndexLoader;
 import argssearch.shared.cache.TokenCachePool;
 import argssearch.shared.db.ArgDB;
 import argssearch.shared.nlp.CoreNlpService;
@@ -27,25 +28,5 @@ public class Main {
         Third Arg = Query Output path
     */
     public static void main(String[] args) throws IOException {
-        logger.debug("Main Args: " + String.join(" ", args));
-        ArgumentParser argParser = new ArgumentParser();
-        argParser
-            .addStringArg("parameterRun", "pr", "Should a parameter run be performed (fromMultiplier:toMultiplier:stepSize) ie. (0:3:0.2)")
-            .addStringArg("singleMultiRun", "smr" , "Should a single multi run be performed (discussionMultiplier:premiseMultiplier:argumentMultiplier) ie. (1:1:1)")
-            .addStringArg("inputDirectory", "i" , "Input directory containing all files")
-            .addStringArg("outputDirectory", "o", "The directory that should contain the outputs")
-            .addStringArg("testDirectory", "t", "Where the run files will go")
-            .addStringArg("skipReadingCrawl", "skip", "Dont read the crawled data in");
-
-        argParser.parseArgs(args);
-
-        ParameterRunExecutor.MultiplierRun(
-            argParser.getString("inputDirectory"),
-            argParser.getString("testDirectory"),
-            true,
-            0,
-            3,
-            0.5
-        );
     }
 }
