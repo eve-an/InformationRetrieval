@@ -24,7 +24,7 @@ public class PhraseRetrieval {
     switch(table.getTableName().toLowerCase()){
       case "argument_index":
         prequery =
-                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight,argument.argid) AS rank, weight AS score " +
+                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight DESC,argument.argid DESC) AS rank, weight AS score " +
                         "FROM argument INNER JOIN " +
                         "( ";
         postquery =
@@ -35,7 +35,7 @@ public class PhraseRetrieval {
         break;
       case "premise_index":
         prequery =
-                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight,argument.argid) AS rank, weight AS score " +
+                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight DESC,argument.argid DESC) AS rank, weight AS score " +
                         "FROM argument INNER JOIN " +
                         "( ";
         postquery =
@@ -46,7 +46,7 @@ public class PhraseRetrieval {
         break;
       case "discussion_index":
         prequery =
-                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight,argument.argid) AS rank, weight AS score " +
+                "SELECT crawlID AS doc, DENSE_RANK() OVER(ORDER BY weight DESC,argument.argid DESC) AS rank, weight AS score " +
                         "FROM argument INNER JOIN " +
                         "( " +
                         "   SELECT pid, weight " +
